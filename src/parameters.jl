@@ -20,8 +20,8 @@ struct Parameters #NOTE: allow user to define the matches_per_period (default 1?
         @assert number_agents >= 2 "'population' must be >= 2"
         @assert memory_length >= 1 "'memory_length' must be positive"
         @assert 0.0 <= error <= 1.0 "'error' must be between 0.0 and 1.0"
-        @assert isdefined(Registry, Symbol(starting_condition_fn_name)) "'starting_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @startingcondition macro before function to register it"
-        @assert isdefined(Registry, Symbol(stopping_condition_fn_name)) "'stopping_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @stoppingcondition macro before function to register it"
+        @assert isdefined(Registry.StartingConditions, Symbol(starting_condition_fn_name)) "'starting_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @startingcondition macro before function to register it"
+        @assert isdefined(Registry.StoppingConditions, Symbol(stopping_condition_fn_name)) "'stopping_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @stoppingcondition macro before function to register it"
         return new(number_agents, memory_length, error, starting_condition_fn_name, stopping_condition_fn_name, user_variables)
     end
     function Parameters()
@@ -31,8 +31,8 @@ struct Parameters #NOTE: allow user to define the matches_per_period (default 1?
         @assert number_agents >= 2 "'population' must be >= 2"
         @assert memory_length >= 1 "'memory_length' must be positive"
         @assert 0.0 <= error <= 1.0 "'error' must be between 0.0 and 1.0"
-        @assert isdefined(Registry, Symbol(starting_condition_fn_name)) "'starting_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @startingcondition macro before function to register it"
-        @assert isdefined(Registry, Symbol(stopping_condition_fn_name)) "'stopping_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @stoppingcondition macro before function to register it"
+        @assert isdefined(Registry.StartingConditions, Symbol(starting_condition_fn_name)) "'starting_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @startingcondition macro before function to register it"
+        @assert isdefined(Registry.StoppingConditions, Symbol(stopping_condition_fn_name)) "'stopping_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @stoppingcondition macro before function to register it"
         return new(number_agents, memory_length, error, starting_condition_fn_name, stopping_condition_fn_name, user_variables)
     end
 end
@@ -93,7 +93,7 @@ starting_condition_fn_name(params::Parameters) = getfield(params, :starting_cond
 
 Get the user-defined starting condition function which correlates to the String stored in the 'starting_condition_fn_name' Parameters field.
 """
-starting_condition_fn(params::Parameters) = getfield(Registry, Symbol(starting_condition_fn_name(params)))
+starting_condition_fn(params::Parameters) = getfield(Registry.StartingConditions, Symbol(starting_condition_fn_name(params)))
 
 
 
@@ -109,7 +109,7 @@ stopping_condition_fn_name(params::Parameters) = getfield(params, :stopping_cond
 
 Get the user-defined stopping condition function which correlates to the String stored in the 'stopping_condition_fn' Parameters field.
 """
-stopping_condition_fn(params::Parameters) = getfield(Registry, Symbol(stopping_condition_fn_name(params)))
+stopping_condition_fn(params::Parameters) = getfield(Registry.StoppingConditions, Symbol(stopping_condition_fn_name(params)))
 
 
 

@@ -301,9 +301,9 @@ function configure(toml_path::String="")
 
             # define registry functions on all worker procs
             if isdefined(Main, :Interactions) #the following won't work on __init__ since Interactions isn't yet defined! However, on subsequent configure() calls, the distributed procs will be updated.
-                Registry.update_everywhere(:_graphmodel_fn_register)
-                Registry.update_everywhere(:_starting_condition_fn_register)
-                Registry.update_everywhere(:_stopping_condition_fn_register)
+                Registry.update_everywhere(:GraphModels, :_graphmodel_fn_register)
+                Registry.update_everywhere(:StartingConditions, :_starting_condition_fn_register)
+                Registry.update_everywhere(:StoppingConditions, :_stopping_condition_fn_register)
             end            
 
         end
