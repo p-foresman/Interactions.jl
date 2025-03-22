@@ -11,17 +11,18 @@ include("stoppingconditions.jl")
 #     end
 # end
 
-function erdos_renyi(parameters::Parameters, λ::Real; kwargs...)
+@graphmodel function erdos_renyi(parameters::Parameters, λ::Real; kwargs...)
     N = number_agents(parameters)
     num_edges = Interactions.GraphsExt.edge_count(N, Interactions.GraphsExt.edge_density(N, λ))
     g::Interactions.GraphsExt.Graphs.SimpleGraph = Interactions.GraphsExt.Graphs.erdos_renyi(N, num_edges; kwargs..., is_directed=false)
     return g
 end
 
-function complete(parameters::Parameters)
+@graphmodel function complete(parameters::Parameters)
     N = number_agents(parameters)
     return Interactions.GraphsExt.complete_graph(N)
 end
+
 
 p = Parameters(10, 10, 0.1, "fractious_starting_condition", "partially_reinforced_equity_stopping_condition", user_variables=UserVariables(:period_count=>0))
 const m = Model(Game("Bargaining Game", [(0, 0) (0, 0) (70, 30); (0, 0) (50, 50) (50, 30); (30, 70) (30, 50) (30, 30)]),

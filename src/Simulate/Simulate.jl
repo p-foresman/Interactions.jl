@@ -142,7 +142,6 @@ function _simulate_distributed_barrier(model::Model; start_time::Float64, kwargs
     num_procs = Interactions.SETTINGS.procs #nworkers()
     seed::Union{Int, Nothing} = Interactions.SETTINGS.use_seed ? Interactions.SETTINGS.random_seed : nothing
 
-    stopping_condition_func = Interactions.get_enclosed_stopping_condition_fn(model) #create the stopping condition function to be used in the simulation(s) from the user-defined closure
     result_channel = RemoteChannel(()->Channel{State}(num_procs))
 
     @distributed for process in 1:num_procs
@@ -154,7 +153,7 @@ function _simulate_distributed_barrier(model::Model; start_time::Float64, kwargs
         !isnothing(seed) && Random.seed!(seed)
 
 
-        _simulate(model, State(model, random_seed=seed), timeout, nothing, stopping_condition_reached=stopping_condition_func, channel=result_channel, start_time=start_time)
+        _simulate(model, State(model, random_seed=seed), timeout, nothing, channel=result_channel, start_time=start_time)
     end
 
     num_received = 0
@@ -233,8 +232,6 @@ function _simulate_distributed_barrier(model::Model, db_info::Database.DatabaseS
     seed::Union{Int, Nothing} = Interactions.SETTINGS.use_seed ? Interactions.SETTINGS.random_seed : nothing
     timeout = Interactions.SETTINGS.timeout
     db_push_period = db_info.push_period
-
-    stopping_condition_func = Interactions.get_enclosed_stopping_condition_fn(model) #create the stopping condition function to be used in the simulation(s)
     
     num_procs = Interactions.SETTINGS.procs #nworkers()
     println("num procs: $num_procs")
@@ -250,7 +247,7 @@ function _simulate_distributed_barrier(model::Model, db_info::Database.DatabaseS
         # end
         !isnothing(seed) && Random.seed!(seed)
 
-        _simulate(model, State(model, random_seed=seed), timeout, db_push_period, stopping_condition_reached=stopping_condition_func, channel=result_channel, start_time=start_time)
+        _simulate(model, State(model, random_seed=seed), timeout, db_push_period, channel=result_channel, start_time=start_time)
     end
     
     num_received = 0
@@ -274,7 +271,7 @@ function _simulate_distributed_barrier(model::Model, db_info::Database.DatabaseS
             num_received += 1
         else #if the state is not complete and it didn't time out, it'a a periodic push, so send back to simulate futher
             Interactions.prev_simulation_uuid!(result_state, simulation_uuid) #set the previously-pushed simulation_uuid to keep order
-            remote_do(_simulate, default_worker_pool(), model, result_state, timeout, db_push_period; stopping_condition_reached=stopping_condition_func, channel=result_channel, start_time=start_time)
+            remote_do(_simulate, default_worker_pool(), model, result_state, timeout, db_push_period; channel=result_channel, start_time=start_time)
         end
     end
 
@@ -302,7 +299,6 @@ function _simulate_distributed_barrier(model_state_tuples::Vector{Tuple{Model, S
     timeout = Interactions.SETTINGS.timeout
     db_push_period = db_info.push_period
 
-    # stopping_condition_func = Interactions.get_enclosed_stopping_condition_fn(model) #create the stopping condition function to be used in the simulation(s)
     result_channel = RemoteChannel(()->Channel{State}(nworkers()))
     num_incomplete = length(model_state_tuples)
     @distributed for model_state in model_state_tuples
@@ -311,8 +307,7 @@ function _simulate_distributed_barrier(model_state_tuples::Vector{Tuple{Model, S
         # if !preserve_graph
         #     state = State(model) #regenerate state so each process has a different graph
         # end
-        stopping_condition_func = Interactions.get_enclosed_stopping_condition_fn(model_state[1]) #create the stopping condition function to be used in the simulation(s)
-        _simulate(model_state[1], model_state[2], timeout, db_push_period, stopping_condition_reached=stopping_condition_func, channel=result_channel, start_time=start_time)
+        _simulate(model_state[1], model_state[2], timeout, db_push_period, channel=result_channel, start_time=start_time)
     end
     
 
@@ -332,7 +327,7 @@ function _simulate_distributed_barrier(model_state_tuples::Vector{Tuple{Model, S
             num_received += 1
         else #if the state is not complete and it didn't time out, it'a a periodic push, so send back to simulate futher
             Interactions.prev_simulation_uuid!(result_state, simulation_uuid) #set the previously-pushed simulation_uuid to keep order
-            remote_do(_simulate, default_worker_pool(), model, result_state, timeout, db_push_period; stopping_condition_reached=stopping_condition_func, channel=result_channel, start_time=start_time)
+            remote_do(_simulate, default_worker_pool(), model, result_state, timeout, db_push_period; channel=result_channel, start_time=start_time)
         end
     end
 
@@ -354,14 +349,12 @@ function _simulate_distributed_barrier(model_state::Tuple{Model, State}, db_info
     # flush(stdout) #flush buffer
     timeout = Interactions.SETTINGS.timeout
     db_push_period = db_info.push_period
-    # stopping_condition_func = Interactions.get_enclosed_stopping_condition_fn(model) #create the stopping condition function to be used in the simulation(s)
+
     result_channel = RemoteChannel(()->Channel{State}(nworkers()))
         # if !preserve_graph
         #     state = State(model) #regenerate state so each process has a different graph
         # end
-    stopping_condition_func = Interactions.get_enclosed_stopping_condition_fn(model_state[1]) #create the stopping condition function to be used in the simulation(s)
-
-    _simulate(model_state[1], model_state[2], timeout, db_push_period, stopping_condition_reached=stopping_condition_func, channel=result_channel, start_time=start_time)
+    _simulate(model_state[1], model_state[2], timeout, db_push_period, channel=result_channel, start_time=start_time)
     
 
     num_received = 0
@@ -380,7 +373,7 @@ function _simulate_distributed_barrier(model_state::Tuple{Model, State}, db_info
             num_received += 1
         else #if the state is not complete and it didn't time out, it'a a periodic push, so send back to simulate futher
             Interactions.prev_simulation_uuid!(result_state, simulation_uuid) #set the previously-pushed simulation_uuid to keep order
-            remote_do(_simulate, default_worker_pool(), model, result_state, timeout, db_push_period; stopping_condition_reached=stopping_condition_func, channel=result_channel, start_time=start_time)
+            remote_do(_simulate, default_worker_pool(), model, result_state, timeout, db_push_period; channel=result_channel, start_time=start_time)
         end
     end
 
@@ -397,7 +390,8 @@ end
 
 
 #NOTE: can definitely reduce _simulate functions into one function (use multiple dispatch at a deeper level for timeout and db_push_period)
-function _simulate(model::Model, state::State, ::Nothing, ::Nothing; stopping_condition_reached::Function, channel::RemoteChannel{Channel{State}}, start_time::Float64, prev_simulation_uuid::Union{String, Nothing} = nothing)
+function _simulate(model::Model, state::State, ::Nothing, ::Nothing; channel::RemoteChannel{Channel{State}}, start_time::Float64, prev_simulation_uuid::Union{String, Nothing} = nothing)
+    stopping_condition_reached = Interactions.get_enclosed_stopping_condition_fn(model)
 
     #restore the rng state if the simulation is continued
     Interactions.restore_rng_state(state)
@@ -425,7 +419,8 @@ function _simulate(model::Model, state::State, ::Nothing, ::Nothing; stopping_co
 end
 
 
-function _simulate(model::Model, state::State, timeout::Int, ::Nothing; stopping_condition_reached::Function, channel::RemoteChannel{Channel{State}}, start_time::Float64, prev_simulation_uuid::Union{String, Nothing} = nothing)
+function _simulate(model::Model, state::State, timeout::Int, ::Nothing; channel::RemoteChannel{Channel{State}}, start_time::Float64, prev_simulation_uuid::Union{String, Nothing} = nothing)
+    stopping_condition_reached = Interactions.get_enclosed_stopping_condition_fn(model)
 
     #restore the rng state if the simulation is continued
     Interactions.restore_rng_state(state)
@@ -461,8 +456,11 @@ function _simulate(model::Model, state::State, timeout::Int, ::Nothing; stopping
     return nothing
 end
 
-function _simulate(model::Model, state::State, ::Nothing, db_push_period::Int; stopping_condition_reached::Function, channel::RemoteChannel{Channel{State}}, start_time::Float64, prev_simulation_uuid::Union{String, Nothing} = nothing)
+function _simulate(model::Model, state::State, ::Nothing, db_push_period::Int; channel::RemoteChannel{Channel{State}}, start_time::Float64, prev_simulation_uuid::Union{String, Nothing} = nothing)
     @assert db_push_period > 0 "db_push_period must be > 0"
+    
+    stopping_condition_reached = Interactions.get_enclosed_stopping_condition_fn(model)
+
     #restore the rng state if the simulation is continued
     Interactions.restore_rng_state(state)
 
@@ -499,8 +497,11 @@ function _simulate(model::Model, state::State, ::Nothing, db_push_period::Int; s
     return nothing
 end
 
-function _simulate(model::Model, state::State, timeout::Int, db_push_period::Int; stopping_condition_reached::Function, channel::RemoteChannel{Channel{State}}, start_time::Float64, prev_simulation_uuid::Union{String, Nothing} = nothing)
+function _simulate(model::Model, state::State, timeout::Int, db_push_period::Int; channel::RemoteChannel{Channel{State}}, start_time::Float64, prev_simulation_uuid::Union{String, Nothing} = nothing)
     @assert db_push_period > 0 "db_push_period must be > 0"
+    
+    stopping_condition_reached = Interactions.get_enclosed_stopping_condition_fn(model)
+
     #restore the rng state if the simulation is continued
     Interactions.restore_rng_state(state)
 

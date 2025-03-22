@@ -10,30 +10,30 @@ struct Parameters #NOTE: allow user to define the matches_per_period (default 1?
     memory_length::Int
     error::Float64
     # matches_per_period::Function #allow users to define their own matches per period as a function of other parameters?
-    starting_condition_fn_str::String
-    stopping_condition_fn_str::String
+    starting_condition_fn_name::String
+    stopping_condition_fn_name::String
     user_variables::UserVariables #NOTE: should starting_condition_variables and stopping_condition_variables be separated? (maybe not, it's on the user to manage these)
     # random_seed::Int #probably don't need a random seed in every Parameters struct?
 
 
-    function Parameters(number_agents::Int, memory_length::Int, error::Float64, starting_condition_fn_str::String, stopping_condition_fn_str::String; user_variables::UserVariables=UserVariables())
+    function Parameters(number_agents::Int, memory_length::Int, error::Float64, starting_condition_fn_name::String, stopping_condition_fn_name::String; user_variables::UserVariables=UserVariables())
         @assert number_agents >= 2 "'population' must be >= 2"
         @assert memory_length >= 1 "'memory_length' must be positive"
         @assert 0.0 <= error <= 1.0 "'error' must be between 0.0 and 1.0"
-        @assert isdefined(Main, Symbol(starting_condition_fn_str)) "the starting_condition_fn_str provided does not correlate to a defined function"
-        @assert isdefined(Main, Symbol(stopping_condition_fn_str)) "the stopping_condition_fn_str provided does not correlate to a defined function"
-        return new(number_agents, memory_length, error, starting_condition_fn_str, stopping_condition_fn_str, user_variables)
+        @assert isdefined(Registry, Symbol(starting_condition_fn_name)) "'starting_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @startingcondition macro before function to register it"
+        @assert isdefined(Registry, Symbol(stopping_condition_fn_name)) "'stopping_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @stoppingcondition macro before function to register it"
+        return new(number_agents, memory_length, error, starting_condition_fn_name, stopping_condition_fn_name, user_variables)
     end
     function Parameters()
         return new()
     end
-    function Parameters(number_agents::Int, memory_length::Int, error::Float64, starting_condition_fn_str::String, stopping_condition_fn_str::String, user_variables::UserVariables)
+    function Parameters(number_agents::Int, memory_length::Int, error::Float64, starting_condition_fn_name::String, stopping_condition_fn_name::String, user_variables::UserVariables)
         @assert number_agents >= 2 "'population' must be >= 2"
         @assert memory_length >= 1 "'memory_length' must be positive"
         @assert 0.0 <= error <= 1.0 "'error' must be between 0.0 and 1.0"
-        @assert isdefined(Main, Symbol(starting_condition_fn_str)) "the starting_condition_fn_str provided does not correlate to a defined function"
-        @assert isdefined(Main, Symbol(stopping_condition_fn_str)) "the stopping_condition_fn_str provided does not correlate to a defined function"
-        return new(number_agents, memory_length, error, starting_condition_fn_str, stopping_condition_fn_str, user_variables)
+        @assert isdefined(Registry, Symbol(starting_condition_fn_name)) "'starting_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @startingcondition macro before function to register it"
+        @assert isdefined(Registry, Symbol(stopping_condition_fn_name)) "'stopping_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @stoppingcondition macro before function to register it"
+        return new(number_agents, memory_length, error, starting_condition_fn_name, stopping_condition_fn_name, user_variables)
     end
 end
 
@@ -80,68 +80,38 @@ error_rate(params::Parameters) = getfield(params, :error)
 
 
 
-const _starting_condition_registry = Vector{Expr}()
 
 """
-    @startingcondition fn
+    starting_condition_fn_name(params::Parameters)
 
-A macro used to register user starting conditions to be used in Interactions. This MUST precede any starting conditions used in a user's simulations.
+Get the 'starting_condition_fn_name' Parameters field.
 """
-macro startingcondition(fn)
-    push!(_starting_condition_registry, fn)
-    @everywhere eval($fn) #NOTE: could do Interactions.eval() to evaluate it into the global scope of Interactions instead of Main
-    return nothing
-end
-
-"""
-    starting_condition_fn_str(params::Parameters)
-
-Get the 'starting_condition_fn_str' Parameters field.
-"""
-starting_condition_fn_str(params::Parameters) = getfield(params, :starting_condition_fn_str)
+starting_condition_fn_name(params::Parameters) = getfield(params, :starting_condition_fn_name)
 
 """
     starting_condition_fn(params::Parameters)
 
-Get the user-defined starting condition function which correlates to the String stored in the 'starting_condition_fn_str' Parameters field.
+Get the user-defined starting condition function which correlates to the String stored in the 'starting_condition_fn_name' Parameters field.
 """
-starting_condition_fn(params::Parameters) = getfield(Main, Symbol(starting_condition_fn_str(params)))
+starting_condition_fn(params::Parameters) = getfield(Registry, Symbol(starting_condition_fn_name(params)))
 
 
-
-const _stopping_condition_registry = Vector{Expr}()
 
 """
-    @stoppingcondition fn
+    stopping_condition_fn_name(params::Parameters)
 
-A macro used to register user stopping conditions to be used in Interactions. This MUST precede any stopping conditions used in a user's simulations.
+Get the 'stopping_condition_fn_name' Parameters field.
 """
-macro stoppingcondition(fn)
-    push!(_stopping_condition_registry, fn)
-    @everywhere eval($fn) #NOTE: could do Interactions.eval() to evaluate it into the global scope of Interactions instead of Main
-    return nothing
-end
-
-"""
-    stopping_condition_fn_str(params::Parameters)
-
-Get the 'stopping_condition_fn_str' Parameters field.
-"""
-stopping_condition_fn_str(params::Parameters) = getfield(params, :stopping_condition_fn_str)
+stopping_condition_fn_name(params::Parameters) = getfield(params, :stopping_condition_fn_name)
 
 """
     stopping_condition_fn(params::Parameters)
 
 Get the user-defined stopping condition function which correlates to the String stored in the 'stopping_condition_fn' Parameters field.
 """
-stopping_condition_fn(params::Parameters) = getfield(Main, Symbol(stopping_condition_fn_str(params)))
+stopping_condition_fn(params::Parameters) = getfield(Registry, Symbol(stopping_condition_fn_name(params)))
 
 
-function _assert_registries()
-    @assert !isempty(_starting_condition_registry) "Must define at least one starting condition function with the @startingcondition macro"
-    @assert !isempty(_stopping_condition_registry) "Must define at least one stopping condition function with the @stoppingcondition macro"
-    return nothing
-end
 
 
 """
@@ -159,7 +129,7 @@ user_variables(params::Parameters) = getfield(params, :user_variables)
 
 Get the string used for displaying a Parameters instance.
 """
-displayname(params::Parameters) = "N=$(number_agents(params)) m=$(memory_length(params)) e=$(error_rate(params)) starting=$(starting_condition_fn_str(params)) stopping=$(stopping_condition_fn_str(params))"
+displayname(params::Parameters) = "N=$(number_agents(params)) m=$(memory_length(params)) e=$(error_rate(params)) starting=$(starting_condition_fn_name(params)) stopping=$(stopping_condition_fn_name(params))"
 
 Base.show(params::Parameters) = println(displayname(params))
 

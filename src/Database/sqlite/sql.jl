@@ -447,8 +447,8 @@ function sql_insert_parameters(params::Parameters, parameters_str::String) #NOTE
         $(Interactions.number_agents(params)),
         $(Interactions.memory_length(params)),
         $(Interactions.error_rate(params)),
-        '$(Interactions.starting_condition_fn_str(params))',
-        '$(Interactions.stopping_condition_fn_str(params))',
+        '$(Interactions.starting_condition_fn_name(params))',
+        '$(Interactions.stopping_condition_fn_name(params))',
         '$parameters_str'
     )
     ON CONFLICT (parameters) DO UPDATE

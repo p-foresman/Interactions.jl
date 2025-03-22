@@ -296,35 +296,16 @@ function configure(toml_path::String="")
                     import Pkg
                     Pkg.activate($$(project_dirpath()); io=devnull) #must activate the local project environment to gain access to the Interactions package
                     using Interactions #will call __init__() on startup for these processes which will configure all processes internally
-
-                    # for r in $$(getfield(Interactions.Register._graphmodel_fn_registry, :fn_list))
-                    #     push!(Interactions.Register._graphmodel_fn_registry, r)
-                    # end
-                    # Interactions.Register._graphmodel_fn_registry = Interactions.Register.Registry()
-                    
-                    # $$(Interactions.Register._graphmodel_fn_registry)
                 end)
             end
 
-            #define user-defined starting and stopping conditions on all workers (only matters if user reconfigures processes with Interactions.configure())
-            #NOTE: this seems sketch but is working fine for now
-
-            # for proc in procs
-            #     @spawnat(proc, Register.eval(:(_graphmodel_fn_registry=$(Register._graphmodel_fn_registry))))
-            # end
+            # define registry functions on all worker procs
             if isdefined(Main, :Interactions) #the following won't work on __init__ since Interactions isn't yet defined! However, on subsequent configure() calls, the distributed procs will be updated.
                 Registry.update_everywhere(:_graphmodel_fn_register)
-            end
-            # @everywhere Register.define($Register._graphmodel_fn_registry)
-            
-            for fn in _starting_condition_registry
-                # @startingcondition eval($fn)
-                @everywhere eval($fn)
-            end
-            for fn in _stopping_condition_registry
-                # @stoppingcondition eval($fn)
-                @everywhere eval($fn)
-            end
+                Registry.update_everywhere(:_starting_condition_fn_register)
+                Registry.update_everywhere(:_stopping_condition_fn_register)
+            end            
+
         end
         println("$(SETTINGS.procs) $(SETTINGS.procs > 1 ? "processes" : "process") initialized")
 

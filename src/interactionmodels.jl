@@ -19,9 +19,9 @@ struct GraphModel <: InteractionModel
 
     function GraphModel(fn_name::String, args::NamedTuple, kwargs::Dict{Symbol, Any})
         # @assert #make sure fn_name is in Registry
-        @assert isdefined(Register, Symbol(fn_name)) "the fn provided does not correlate to a defined function in Register. Must use @graphmodel macro before function to add it to Register" #NOTE: change to Register
+        @assert isdefined(Registry, Symbol(fn_name)) "'fn_name' provided does not correlate to a defined function in the Registry. Must use @graphmodel macro before function to register it" #NOTE: change to Registry
         # @assert all(i -> isa(i, Real), values(args)) "All args must be <:Real" #NOTE: should we require this?
-        f = getfield(Register, Symbol(fn_name)) #get the function
+        f = getfield(Registry, Symbol(fn_name)) #get the function
         arg_types = map(arg->typeof(arg), collect(args))
         m = which(f, (Parameters, arg_types...)) #get the method associated with the arg types provided. This will error if the arguments provided don't match the type specifications for the Function
         param_types = Base.arg_decl_parts(m)[2][3:end] #first index is function name, second should be Parameters type
@@ -39,7 +39,7 @@ end
 
     
 fn_name(graphmodel::GraphModel) = getfield(graphmodel, :fn_name)
-fn(graphmodel::GraphModel) = getfield(Register, Symbol(fn_name(graphmodel)))
+fn(graphmodel::GraphModel) = getfield(Registry, Symbol(fn_name(graphmodel)))
 params(graphmodel::GraphModel) = getfield(graphmodel, :params)
 args(graphmodel::GraphModel) = values(params(graphmodel))
 kwargs(graphmodel::GraphModel) = getfield(graphmodel, :kwargs)
@@ -53,7 +53,7 @@ kwargs(graphmodel::GraphModel) = getfield(graphmodel, :kwargs)
 # """
 # macro graphmodel(fn)
 #     push!(_graphmodel_fn_registry, fn)
-#     @everywhere eval($fn) #NOTE: could do eval() to evaluate it into the global scope of Interactions instead of Register
+#     @everywhere eval($fn) #NOTE: could do eval() to evaluate it into the global scope of Interactions instead of Registry
 #     return nothing
 # end
 

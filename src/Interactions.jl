@@ -43,8 +43,6 @@ export
     UserVariables,
     user_variables,
     set_user_variable!,
-    @startingcondition,
-    @stoppingcondition,
 
     # startingcondition,
     type, #rename?
@@ -170,7 +168,9 @@ export
     Database,
     Analyze,
 
-    @graphmodel
+    @graphmodel,
+    @startingcondition,
+    @stoppingcondition
 
 
 using
@@ -196,7 +196,7 @@ include("GraphsExt/GraphsExt.jl")
 import .GraphsExt
 
 include("Registry/Registry.jl")
-import .Registry: @graphmodel
+import .Registry: @graphmodel, @startingcondition, @stoppingcondition
 
 #core of Interactions
 include("games.jl")
