@@ -1,0 +1,56 @@
+name = "Interactions"
+uuid = "c92cc74d-b508-4783-89d8-09f38475623b"
+authors = ["p-foresman <98059656+p-foresman@users.noreply.github.com>"]
+version = "0.1.0"
+
+[deps]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+Bootstrap = "e28b5b4c-05e8-5b66-bc03-6f0c0a0a06e0"
+Cairo = "159f3aea-2a34-519c-b102-8c37f9878175"
+CodecZlib = "944b1d66-785c-5afd-91f1-9de20f533193"
+ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
+CurveFit = "5a033b19-8c74-5913-a970-47c3779ef25c"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+Fontconfig = "186bb1d3-e1f7-5a2c-a377-96d770f13627"
+GraphPlot = "a2cc645c-3eea-5389-862e-a155d0052231"
+Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
+HypothesisTests = "09f84164-cd44-5f33-b23f-e6b0d136a0d5"
+InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
+LibPQ = "194296ae-ab2e-5f79-8cd4-7183a0a5a0d1"
+Memoize = "c03570c3-d221-55d1-a50c-7939bbd78826"
+ParallelDataTransfer = "2dcacdae-9679-587a-88bb-8b444fb7085b"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
+SQLite = "0aa819cd-b072-5ff4-a722-6bc24af294d9"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
+StructTypes = "856f2bd8-1eba-4b0a-8007-ebc267875bd4"
+Suppressor = "fd094767-a336-5f1f-9728-57cf17d0bbfb"
+TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
+Tar = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
+TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
+UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
+
+[compat]
+CodecZlib = "0.7.6"
+InteractiveUtils = "1.11.0"
+ParallelDataTransfer = "0.5.1"
+Tar = "1.10.0"
+julia = "1.10"
+
+[extras]
+Suppressor = "fd094767-a336-5f1f-9728-57cf17d0bbfb"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test", "Suppressor"]

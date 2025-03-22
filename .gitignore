@@ -1,0 +1,10 @@
+Manifest.toml
+GamesOnNetworks.toml
+GamesOnNetworks.sqlite
+checkpoint.sqlite
+
+/sqlite/
+/config/
+plots/
+plotting.toml
+
