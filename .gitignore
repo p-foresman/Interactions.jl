@@ -1,10 +1,10 @@
 Manifest.toml
-GamesOnNetworks.toml
-GamesOnNetworks.sqlite
-checkpoint.sqlite
+Interactions.toml
+Interactions.sqlite
+
 
 /sqlite/
 /config/
 plots/
 plotting.toml
-
+user_files/

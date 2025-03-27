@@ -85,5 +85,5 @@ db_insert_simulation(::Nothing, args...) = _nodb()
 db_has_incomplete_simulations() = db_has_incomplete_simulations(Interactions.MAIN_DB())
 db_has_incomplete_simulations(::Nothing) = _nodb()
 
-db_collect_temp(directory_path::String; cleanup_directory::Bool = false) = db_collect_temp(Interactions.MAIN_DB(), directory_path, cleanup_directory=cleanup_directory)
+db_collect_temp(directory_path::String; kwargs...) = db_collect_temp(Interactions.MAIN_DB(), directory_path; kwargs...)
 db_collect_temp(::Nothing, ::String) = _nodb()

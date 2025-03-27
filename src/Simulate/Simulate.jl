@@ -317,7 +317,7 @@ function _simulate_distributed_barrier(model_state_tuples::Vector{Tuple{Model, S
     while num_received < num_incomplete
         #push to db if the simulation has completed OR if checkpoint is active in settings. For timeout with checkpoint disabled, data is NOT pushed to a database (currently)
         result_state = take!(result_channel)
-        simulation_uuid = Database.db_insert_simulation(result_state, model_id, db_group_id)
+        simulation_uuid = Database.db_insert_simulation(result_state, result_state.model_id, db_group_id)
         if Interactions.iscomplete(result_state)
             push!(result_states, result_state)
             num_received += 1

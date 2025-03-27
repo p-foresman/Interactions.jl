@@ -64,7 +64,7 @@ end
 # end
 
 
-function db_collect_temp(db_info_master::SQLiteInfo, directory_path::String; cleanup_directory::Bool = false)
+function db_collect_temp(db_info_master::SQLiteInfo, directory_path::String; cleanup_directory::Bool = false, kwargs...)
     contents = readdir(directory_path)
     for item in contents
         item_path = normpath(joinpath(directory_path, item))
@@ -73,7 +73,7 @@ function db_collect_temp(db_info_master::SQLiteInfo, directory_path::String; cle
             success = false
             while !success
                 try
-                    execute_merge_temp(db_info_master, db_info_merger)
+                    execute_merge_temp(db_info_master, db_info_merger; kwargs...)
                     success = true
                 catch e
                     if e isa SQLiteException
@@ -439,28 +439,4 @@ end
 
 function db_has_incomplete_simulations(db_info::SQLiteInfo)
     return !isempty(db_get_incomplete_simulation_uuids(db_info))
-end
-
-
-update_temp() = db_execute("ALTER TABLE simulations ADD data TEXT DEFAULT '{}' NOT NULL")
-function update_data()
-    sims = db_query("select * from simulations")
-    for sim in eachrow(sims)
-        data = Dict{String, Float64}()
-        agents = db_query_agents(sim.uuid)
-        HML = [0, 0, 0]
-        for agent_json in eachrow(agents)
-            agent = Database.JSON3.read(agent_json.agent, Interactions.Agent) #NOTE: make function to encapsulate this
-            if !Interactions.ishermit(agent)
-                HML[Interactions.rational_choice(agent)] += 1
-            end
-        end
-        total_agents = sum(HML)
-        data["H"] = HML[1] / total_agents
-        data["M"] = HML[2] / total_agents
-        data["L"] = HML[3] / total_agents
-
-        data_json = JSON3.write(data)
-        db_execute("update simulations set data = '$data_json' where uuid = '$(sim.uuid)'")
-    end
 end
