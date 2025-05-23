@@ -6,7 +6,8 @@ module Simulate
 export simulate
 
 import
-    ..Database
+    ..Database,
+    ..Generators
 
 using
     ..Interactions,
@@ -15,6 +16,7 @@ using
     DataStructures
 
 include("simulation_functions.jl")
+include("new.jl")
 
 
 """
@@ -36,7 +38,7 @@ Run a simulation using a model stored in the configured database with the given 
 Note: a database must be configured to use this method and a model with the given model_id must exist in the configured database.
 """
 function simulate(model_id::Int; db_group_id::Union{Nothing, Integer} = nothing)
-    @assert !isnothing(Interactions.DATABASE()) Database._nodb()
+    @assert !isnothing(Interactions.DATABASE()) Database.NoDatabaseError()
 
     # timer = Timer(timeout(model, Interactions.DATABASE()))
     return _simulate_model_barrier(model_id, Interactions.DATABASE(), start_time=time())
@@ -50,7 +52,7 @@ function simulate(model_id::Int; db_group_id::Union{Nothing, Integer} = nothing)
 end
 
 function simulate(model::Model, model_id::Int; db_group_id::Union{Nothing, Integer} = nothing) #NOTE: potentially dangerous method that could screw up database integrity
-    @assert !isnothing(Interactions.DATABASE()) Database._nodb()
+    @assert !isnothing(Interactions.DATABASE()) Database.NoDatabaseError()
 
     # timer = Timer(timeout(model, Interactions.DATABASE()))
     return _simulate_model_barrier(model, model_id, Interactions.DATABASE(); db_group_id=db_group_id, start_time=time())
@@ -64,13 +66,13 @@ function simulate(model::Model, model_id::Int; db_group_id::Union{Nothing, Integ
 end
 
 function simulate() #NOTE: probably don't want this method for simulation continuation
-    @assert !isnothing(Interactions.DATABASE()) Database._nodb()
+    @assert !isnothing(Interactions.DATABASE()) Database.NoDatabaseError()
 
     return _simulate_model_barrier(Interactions.DATABASE(), start_time=time())
 end
 
 function simulate(simulation_uuid::String)
-    @assert !isnothing(Interactions.DATABASE()) Database._nodb()
+    @assert !isnothing(Interactions.DATABASE()) Database.NoDatabaseError()
 
     return _simulate_model_barrier(simulation_uuid, Interactions.DATABASE(), start_time=time())
 end
@@ -327,7 +329,7 @@ function _simulate_distributed_barrier(model_state_tuples::Vector{Tuple{Model, S
             num_received += 1
         else #if the state is not complete and it didn't time out, it'a a periodic push, so send back to simulate futher
             Interactions.prev_simulation_uuid!(result_state, simulation_uuid) #set the previously-pushed simulation_uuid to keep order
-            remote_do(_simulate, default_worker_pool(), model, result_state, timeout, db_push_period; channel=result_channel, start_time=start_time)
+            remote_do(_simulate, default_worker_pool(), result_state.model, result_state, timeout, db_push_period; channel=result_channel, start_time=start_time)
         end
     end
 
@@ -373,7 +375,7 @@ function _simulate_distributed_barrier(model_state::Tuple{Model, State}, db_info
             num_received += 1
         else #if the state is not complete and it didn't time out, it'a a periodic push, so send back to simulate futher
             Interactions.prev_simulation_uuid!(result_state, simulation_uuid) #set the previously-pushed simulation_uuid to keep order
-            remote_do(_simulate, default_worker_pool(), model, result_state, timeout, db_push_period; channel=result_channel, start_time=start_time)
+            remote_do(_simulate, default_worker_pool(), result_state.model, result_state, timeout, db_push_period; channel=result_channel, start_time=start_time)
         end
     end
 

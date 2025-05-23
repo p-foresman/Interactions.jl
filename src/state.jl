@@ -1,5 +1,6 @@
 
 mutable struct State{V, E, C}
+    const model::Model
     const agentgraph::AgentGraph{V, E, C}
     const preallocatedarrays::PreAllocatedArrays #NOTE: PreAllocatedArrays currently 2 players only
     period::Int128 #NOTE: should this be added? if so, must make struct mutable and add const before agentgraph and preallocatedarrays
@@ -24,7 +25,7 @@ mutable struct State{V, E, C}
     # distributed_uuid
 
     #NOTE: clean up these constructors!!
-    function State(model::Model; user_variables::UserVariables=UserVariables(), random_seed::Union{Int, Nothing}=nothing) #NOTE: probably dont need user_variables in this constructor
+    function State(model::Model; user_variables::UserVariables=UserVariables(), model_id::Union{Int, Nothing}=nothing, random_seed::Union{Int, Nothing}=nothing) #NOTE: probably dont need user_variables in this constructor
         agentgraph::AgentGraph = AgentGraph(model)
         V = num_vertices(agentgraph)
         E = num_edges(agentgraph)
@@ -33,20 +34,22 @@ mutable struct State{V, E, C}
 
         all_user_variables = merge(Interactions.user_variables(parameters(model)), user_variables) #user_variables defined here should go last so that values overwrite defaults if applicable!
         # is_stopping_condition_test = parameters(model).stoppingcondition(model)
-        return new{V, E, C}(agentgraph, preallocatedarrays, Int128(0), false, all_user_variables, nothing, nothing, random_seed, nothing, false)
+        return new{V, E, C}(model, agentgraph, preallocatedarrays, Int128(0), false, all_user_variables, model_id, nothing, random_seed, nothing, false)
     end
-    function State(model::Model, agentgraph::AgentGraph{V, E, C}, period::Integer, complete::Bool, user_variables::UserVariables, model_id::Int, prev_simulation_uuid::String, random_seed::Union{Int, Nothing}, rng_state_str::String) where {V, E, C}
-        preallocatedarrays::PreAllocatedArrays = PreAllocatedArrays(model)
-        all_user_variables = merge(Interactions.user_variables(parameters(model)), user_variables) #user_variables defined here should go last so that values overwrite defaults if applicable!
-        return new{V, E, C}(agentgraph, preallocatedarrays, period, complete, all_user_variables, model_id, prev_simulation_uuid, random_seed, rng_state_str, false)
-    end
-    # function Model(model::Model) #used to generate a new model with the same parameters (newly sampled random graph structure)
-    #     return Model(game(model), parameters(model), graphmodel(model), startingcondition(model), stoppingcondition(model), id(model))
+    # function State(model::Model, agentgraph::AgentGraph{V, E, C}, period::Integer, complete::Bool, user_variables::UserVariables, model_id::Int, prev_simulation_uuid::String, random_seed::Union{Int, Nothing}, rng_state_str::String) where {V, E, C}
+    #     preallocatedarrays::PreAllocatedArrays = PreAllocatedArrays(model)
+    #     all_user_variables = merge(Interactions.user_variables(parameters(model)), user_variables) #user_variables defined here should go last so that values overwrite defaults if applicable!
+    #     return new{V, E, C}(model, agentgraph, preallocatedarrays, period, complete, all_user_variables, model_id, prev_simulation_uuid, random_seed, rng_state_str, false)
     # end
 end
 
 
+"""
+    model(state::State)
 
+Get the model from which the state was generated.
+"""
+model(state::State) = getfield(state, :model)
 
 """
     period(state::State)

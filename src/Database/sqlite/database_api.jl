@@ -22,46 +22,6 @@ end
 
 tempdirpath(db_filepath::String) = rsplit(db_filepath, ".", limit=2)[1] * "/"
 
-function db_init_distributed(distributed_uuid::String) #creates a sparate sqlite file for each worker to prevent database locking conflicts (to later be collected).
-    # temp_dirpath = tempdirpath(db_filepath)
-    temp_dirpath = distributed_uuid * "/"
-    mkdir(temp_dirpath)
-    db_info_list = Vector{SQLiteInfo}()
-    for worker in workers()
-        # temp_filepath = temp_dirpath * "$worker.sqlite"
-        db_info = SQLiteInfo("temp$(worker)", temp_dirpath * "$worker.sqlite")
-        execute_init_db_temp(db_info)
-        append!(db_info_list, db_info)
-    end
-    return db_info_list
-end
-
-
-# #NOTE: probably don't actually need this function (can be handled by the following function)
-# function db_collect_distributed(db_filepath::String, distributed_uuid::String) #collects distributed db files into the db_filepath 
-#     # temp_dirpath = tempdirpath(db_filepath)
-#     temp_dirpath = distributed_uuid * "/"
-#     for worker in workers()
-#         temp_filepath = temp_dirpath * "$worker.sqlite"
-#         success = false
-#         while !success #should i create a database lock before iterating through workers?
-#             try
-#                 execute_merge_temp(db_filepath, temp_filepath)
-#                 # rm(temp_filepath)
-#                 success = true
-#             catch e
-#                 if e isa SQLiteException
-#                     println("An error has been caught in db_collect_distributed():")
-#                     showerror(stdout, e)
-#                     sleep(rand(0.1:0.1:4.0))
-#                 else
-#                     throw(e)
-#                 end
-#             end
-#         end
-#     end
-#     rm(temp_dirpath, recursive=true) #this is throwing errors on linux server ("directory not empty") due to hidden nsf lock files
-# end
 
 
 function db_collect_temp(db_info_master::SQLiteInfo, directory_path::String; cleanup_directory::Bool = false, kwargs...)
@@ -212,50 +172,6 @@ function db_insert_parameters(db_info::SQLiteInfo, params::Parameters)
     return parameters_id
 end
 
-# function db_insert_startingcondition(db_info::SQLiteInfo, startingcondition::StartingCondition)
-#     startingcondition_json_str = JSON3.write(typeof(startingcondition)(startingcondition)) #generates a "raw" starting condition object for the database
-#     startingcondition_type = type(startingcondition)
-
-#     startingcondition_id = nothing
-#     while startingcondition_id === nothing
-#         try
-#             startingcondition_id = execute_insert_startingcondition(db_info, startingcondition_type, startingcondition_json_str)
-#         catch
-#             if e isa SQLiteException
-#                 println("An error has been caught in db_insert_startingcondition():")
-#                 showerror(stdout, e)
-#                 sleep(rand(0.1:0.1:4.0))
-#             else
-#                 throw(e)
-#             end
-#         end
-#     end
-
-#     return startingcondition_id
-# end
-
-# function db_insert_stoppingcondition(db_info::SQLiteInfo, stoppingcondition::StoppingCondition)
-#     stoppingcondition_json_str = JSON3.write(typeof(stoppingcondition)(stoppingcondition)) #generates a "raw" stopping condition object for the database
-#     stoppingcondition_type = type(stoppingcondition)
-
-#     stoppingcondition_id = nothing
-#     while isnothing(stoppingcondition_id)
-#         try
-#             stoppingcondition_id::Int = execute_insert_stoppingcondition(db_info, stoppingcondition_type, stoppingcondition_json_str)
-#             return stoppingcondition_id
-#         catch
-#             if e isa SQLiteException
-#                 println("An error has been caught in db_insert_stoppingcondition():")
-#                 showerror(stdout, e)
-#                 sleep(rand(0.1:0.1:4.0))
-#             else
-#                 throw(e)
-#             end
-#         end
-#     end
-# end
-
-
 
 function db_insert_model(db_info::SQLiteInfo, model::Model; model_id::Union{Nothing, Integer}=nothing)
     model_game = game(model)
@@ -313,62 +229,19 @@ function db_insert_model(db_info::SQLiteInfo, model::Model; model_id::Union{Noth
     return model_id
 end
 
-function _insert_simulation_get_args_full(state::State)
-    data_json = "{}"
-    if isdefined(Main, :get_data) #NOTE: this is the quick and dirty way to do this. Ideally need to validate that the get_data function takes State and returns Dict{String, Any}(). (probably should pass the function to state)
-                                 # this also doesnt allow for multiple get_data functions to be defined! need to make more robust
-        data_json = JSON3.write(getfield(Main, :get_data)(state))
-    end
-
-    #prepare agents to be inserted
-    agents_list = Vector{String}([])
-    for agent in agents(Interactions.agentgraph(state))
-        agent_json_str = JSON3.write(agent) #StructTypes.StructType(::Type{Agent}) = StructTypes.Mutable() defined after struct is defined
-        push!(agents_list, agent_json_str)
-    end
-    return [
-        state.prev_simulation_uuid,
-        state.rng_state_str,
-        state.random_seed,
-        Interactions.adjacency_matrix_str(state),
-        Interactions.period(state),
-        Int(Interactions.iscomplete(state)),
-        JSON3.write(user_variables(state)),
-        data_json,
-        agents_list
-    ]
-end
-
-function _insert_simulation_get_args_partial(state::State)
-    data_json = "{}"
-    if isdefined(Main, :get_data) #NOTE: this is the quick and dirty way to do this. Ideally need to validate that the get_data function takes State and returns Dict{String, Any}(). (probably should pass the function to state)
-                                 # this also doesnt allow for multiple get_data functions to be defined! need to make more robust
-        data_json = JSON3.write(getfield(Main, :get_data)(state))
-    end
-
-    return [
-        state.prev_simulation_uuid,
-        state.rng_state_str,
-        state.random_seed,
-        Interactions.period(state),
-        Int(Interactions.iscomplete(state)),
-        JSON3.write(user_variables(state)),
-        data_json
-    ]
-end
 
 function db_insert_simulation(db_info::SQLiteInfo, state::State, model_id::Integer, sim_group_id::Union{Integer, Nothing} = nothing; full_store::Bool=true)
-
-    if full_store
-        args = _insert_simulation_get_args_full(state)
-    else
-        args = _insert_simulation_get_args_partial(state)
+    data_json = "{}"
+    if isdefined(Main, :get_data) #NOTE: this is the quick and dirty way to do this. Ideally need to validate that the get_data function takes State and returns Dict{String, Any}(). (probably should pass the function to state)
+                                 # this also doesnt allow for multiple get_data functions to be defined! need to make more robust
+        data_json = JSON3.write(getfield(Main, :get_data)(state))
     end
+    state_bin = full_store ? serialize_to_vec(state) : nothing
     
     simulation_uuid = nothing
     while isnothing(simulation_uuid)
         try
-            simulation_uuid = execute_insert_simulation(db_info, model_id, sim_group_id, args...)
+            simulation_uuid = execute_insert_simulation(db_info, model_id, sim_group_id, state.prev_simulation_uuid, Interactions.period(state), Int(Interactions.iscomplete(state)), JSON3.write(user_variables(state)), data_json, state_bin)
             #simulation_status = simulation_insert_result.status_message
             # simulation_uuid = simulation_insert_result.simulation_uuid
         catch e
@@ -403,33 +276,10 @@ end
 
 
 function db_reconstruct_simulation(db_info::SQLiteInfo, simulation_uuid::String)
-    simulation_df, agents_df = execute_query_simulations_for_restore(db_info, simulation_uuid)
-
-    @assert !ismissing(simulation_df[1, :graph_adj_matrix]) "this simulation is not reproducable. 'full_store' was set to 'false' in the config file"
-
-    params = JSON3.read(simulation_df[1, :parameters], Parameters)
-    payoff_matrix_size = JSON3.read(simulation_df[1, :payoff_matrix_size], Tuple)
-    game = JSON3.read(simulation_df[1, :game], Game{payoff_matrix_size[1], payoff_matrix_size[2], prod(payoff_matrix_size)})
-    graphmodel = JSON3.read(simulation_df[1, :graphmodel], GraphModel)
-    regen_graph = GraphsExt.Graph(simulation_df[1, :graph_adj_matrix])
-    state_user_variables = UserVariables(JSON3.read(simulation_df[1, :user_variables]))
-    model = Model(game, params, graphmodel)
-    agents = Vector{Agent}()
-    for row in eachrow(agents_df)
-        push!(agents, JSON3.read(row[:agent], Agent))
-    end
-    state_agentgraph = AgentGraph(regen_graph, Interactions.AgentSet{length(agents)}(agents))
-
-
-    seed = ismissing(simulation_df[1, :random_seed]) ? nothing : simulation_df[1, :random_seed]
-
-    state = State(model, state_agentgraph, simulation_df[1, :period], Bool(simulation_df[1, :complete]), state_user_variables, simulation_df[1, :model_id], simulation_df[1, :uuid], seed, simulation_df[1, :rng_state])
-    
-    #restore RNG to previous state
-    # reproduced_rng_state = JSON3.read(simulation_df[1, :rng_state], Random.Xoshiro)
-    # copy!(Random.default_rng(), reproduced_rng_state)
-
-    return (model, state)
+    simulation_df = execute_query_simulations_for_restore(db_info, simulation_uuid)
+    @assert !ismissing(simulation_df[1, :state_bin]) "this simulation is not reproducable. 'full_store' was set to 'false' in the config file"
+    state = deserialize_from_vec(simulation_df[1, :state_bin])
+    return (state.model, state) #NOTE: get rid of model here
 end
 
 function db_get_incomplete_simulation_uuids(db_info::SQLiteInfo)

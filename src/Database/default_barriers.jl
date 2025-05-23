@@ -4,14 +4,14 @@
 Create a connection to the configured database.
 """
 DB(; kwargs...) = DB(Interactions.MAIN_DB(); kwargs...)
-DB(::Nothing; kwargs...) = _nodb()
+DB(::Nothing; kwargs...) = NoDatabaseError()
 """
     sql(qp::QueryParams)
 
 Generate a SQL query for a QueryParams instance (based on configured database type).
 """
 sql(qp::QueryParams) = sql(Interactions.DATABASE(), qp)
-sql(::Nothing, ::QueryParams) = _nodb()
+sql(::Nothing, ::QueryParams) = NoDatabaseError()
 # function sql(qp::QueryParams)
 #     if isempty(Interactions.SETTINGS.query)
 #         return sql(Interactions.SETTINGS.database, qp)
@@ -27,7 +27,7 @@ sql(::Nothing, ::QueryParams) = _nodb()
 Execute SQL (String) on the configured database.
 """
 db_execute(sql::SQL) = db_execute(Interactions.MAIN_DB(), sql)
-db_execute(::Nothing, ::SQL) = _nodb()
+db_execute(::Nothing, ::SQL) = NoDatabaseError()
 
 """
     db_query(sql::SQL)
@@ -35,7 +35,7 @@ db_execute(::Nothing, ::SQL) = _nodb()
 Query the configured database using the SQL (String) provided. Returns a DataFrame containing results.
 """
 db_query(sql::SQL) = db_query(Interactions.DATABASE(), sql)
-db_query(::Nothing, ::SQL) = _nodb()
+db_query(::Nothing, ::SQL) = NoDatabaseError()
 # function db_query(sql::SQL)
 #     if isempty(Interactions.SETTINGS.query)
 #         return db_query(Interactions.SETTINGS.database, sql)
@@ -51,7 +51,7 @@ db_query(::Nothing, ::SQL) = _nodb()
 Query the configured database and attached databases using the QueryParams provided. Returns a DataFrame containing results.
 """
 db_query(qp::QueryParams; kwargs...) = db_query(Interactions.DATABASE(), qp; kwargs...)
-db_query(::Nothing, ::QueryParams) = _nodb()
+db_query(::Nothing, ::QueryParams) = NoDatabaseError()
 
 #db_query(qp::Query_simulations; ensure_samples::Bool=false) = db_query(Interactions.DATABASE(), qp; ensure_samples=ensure_samples)
 
@@ -60,30 +60,35 @@ db_query(::Nothing, ::QueryParams) = _nodb()
 # db_commit_transaction(db::SQLiteDB) = SQLite.commit(db)
 
 db_init() = db_init(Interactions.MAIN_DB())
-db_init(::Nothing) = _nodb()
+db_init(::Nothing) = NoDatabaseError()
 
 
 db_insert_sim_group(description::String) = db_insert_sim_group(Interactions.MAIN_DB(), description)
-db_insert_sim_group(::Nothing, ::String) = _nodb()
+db_insert_sim_group(::Nothing, ::String) = NoDatabaseError()
 
 db_insert_game(game::Game) = db_insert_game(Interactions.MAIN_DB(), game)
-db_insert_game(::Nothing, ::Game) = _nodb()
+db_insert_game(::Nothing, ::Game) = NoDatabaseError()
 
 db_insert_graphmodel(graphmodel::GraphModel) = db_insert_graphmodel(Interactions.MAIN_DB(), graphmodel)
-db_insert_graphmodel(::Nothing, ::GraphModel) = _nodb()
+db_insert_graphmodel(::Nothing, ::GraphModel) = NoDatabaseError()
 
 db_insert_parameters(params::Parameters, use_seed::Bool) = db_insert_parameters(Interactions.MAIN_DB(), params, use_seed)
-db_insert_parameters(::Nothing, ::Parameters, ::Bool) = _nodb()
+db_insert_parameters(::Nothing, ::Parameters, ::Bool) = NoDatabaseError()
 
 
 db_insert_model(model::Model; model_id::Union{Nothing, Integer}=nothing) = db_insert_model(Interactions.MAIN_DB(), model, model_id=model_id)
-db_insert_model(::Nothing, ::Model) = _nodb()
+db_insert_model(::Nothing, ::Model) = NoDatabaseError() #NOTE: return nothing here instead of model_id since no database is configured. (do we want NoDatabaseError() instead?) could make custom NoDB type to return!
+# db_try_insert_model(model::Model; model_id::Union{Nothing, Integer}=nothing) = db_insert_model(Interactions.MAIN_DB(), model, model_id=model_id)
 
 db_insert_simulation(state::State, model_id::Integer, sim_group_id::Union{Integer, Nothing} = nothing) = db_insert_simulation(Interactions.MAIN_DB(), state, model_id, sim_group_id; full_store=Interactions.DATABASE().full_store)
-db_insert_simulation(::Nothing, args...) = _nodb()
+db_insert_simulation(::Nothing, args...) = NoDatabaseError()
 
 db_has_incomplete_simulations() = db_has_incomplete_simulations(Interactions.MAIN_DB())
-db_has_incomplete_simulations(::Nothing) = _nodb()
+db_has_incomplete_simulations(::Nothing) = NoDatabaseError()
 
 db_collect_temp(directory_path::String; kwargs...) = db_collect_temp(Interactions.MAIN_DB(), directory_path; kwargs...)
-db_collect_temp(::Nothing, ::String) = _nodb()
+db_collect_temp(::Nothing, ::String) = NoDatabaseError()
+
+
+db_reconstruct_model(model_id::Integer) = db_reconstruct_model(Interactions.MAIN_DB(), model_id) #NOTE: want to have this search through all attached dbs
+db_reconstruct_model(::Nothing, ::Integer) = NoDatabaseError()

@@ -7,7 +7,8 @@ using
     ..Interactions,
     DataFrames,
     JSON3,
-    UUIDs
+    UUIDs,
+    Serialization
 
 abstract type DBInfo end
 
@@ -51,10 +52,17 @@ type(db_settings::DatabaseSettings) = type(main(db_settings))
 type(::Nothing) = nothing
 
 
+"""
+    NoDatabaseError
 
+Type used to for error handling to signal that no database is configured.
+"""
+struct NoDatabaseError <: Exception
+    message::String
+    NoDatabaseError() = new("no database is configured!")
+end
 
-
-_nodb() = throw("no database is configured!")
+include("utility.jl")
 
 #include JSON parsing helper functions
 include("json.jl")
