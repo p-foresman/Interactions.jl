@@ -76,7 +76,7 @@ db_insert_parameters(params::Parameters, use_seed::Bool) = db_insert_parameters(
 db_insert_parameters(::Nothing, ::Parameters, ::Bool) = NoDatabaseError()
 
 
-db_insert_model(model::Model; model_id::Union{Nothing, Integer}=nothing) = db_insert_model(Interactions.MAIN_DB(), model, model_id=model_id)
+db_insert_model(model::Model; model_id::Union{Nothing, Integer}=nothing) = db_insert_model(Interactions.MAIN_DB(), model, model_id=model_id) #returns model_id::Int
 db_insert_model(::Nothing, ::Model) = NoDatabaseError() #NOTE: return nothing here instead of model_id since no database is configured. (do we want NoDatabaseError() instead?) could make custom NoDB type to return!
 # db_try_insert_model(model::Model; model_id::Union{Nothing, Integer}=nothing) = db_insert_model(Interactions.MAIN_DB(), model, model_id=model_id)
 
@@ -86,9 +86,16 @@ db_insert_simulation(::Nothing, args...) = NoDatabaseError()
 db_has_incomplete_simulations() = db_has_incomplete_simulations(Interactions.MAIN_DB())
 db_has_incomplete_simulations(::Nothing) = NoDatabaseError()
 
+db_get_incomplete_simulation_uuids() = db_get_incomplete_simulation_uuids(Interactions.MAIN_DB())
+db_get_incomplete_simulation_uuids(::Nothing) = NoDatabaseError()
+
+
 db_collect_temp(directory_path::String; kwargs...) = db_collect_temp(Interactions.MAIN_DB(), directory_path; kwargs...)
 db_collect_temp(::Nothing, ::String) = NoDatabaseError()
 
 
 db_reconstruct_model(model_id::Integer) = db_reconstruct_model(Interactions.MAIN_DB(), model_id) #NOTE: want to have this search through all attached dbs
 db_reconstruct_model(::Nothing, ::Integer) = NoDatabaseError()
+
+db_reconstruct_simulation(uuid::String) = db_reconstruct_simulation(Interactions.MAIN_DB(), uuid)
+db_reconstruct_simulation(::Nothing, ::String) = NoDatabaseError()

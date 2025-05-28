@@ -62,6 +62,9 @@ struct NoDatabaseError <: Exception
     NoDatabaseError() = new("no database is configured!")
 end
 
+assert_db() = @assert !isnothing(Interactions.DATABASE()) Database.NoDatabaseError()
+
+
 include("utility.jl")
 
 #include JSON parsing helper functions

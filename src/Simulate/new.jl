@@ -12,27 +12,37 @@ simulate(model::Model; kwargs...) = _simulate_distributed_barrier(model, Interac
 Run a simulation using a model stored in the configured database with the given model_id. The model will be reconstructed to be used in the simulation.
 Note: a database must be configured to use this method and a model with the given model_id must exist in the configured database.
 """
-function simulate_aaa(model_id::Integer; kwargs...)
+
+function simulate(model_id::Integer; kwargs...)
+    Database.assert_db()
     model = Database.db_reconstruct_model(model_id) #construct model associated with id
-    model isa Database.NoDatabaseError && throw(model)
-    return _simulate_model_barrier(model, Interactions.DATABASE(); kwargs..., start_time=time())
+    return _simulate_distributed_barrier(model, Interactions.DATABASE(); kwargs..., start_time=time())
 end
 
 function simulate(model::Model, model_id::Int; kwargs...) #NOTE: potentially dangerous method that could screw up database integrity
     @assert !isnothing(Interactions.DATABASE()) Database.NoDatabaseError()
-    return _simulate_model_barrier(model, model_id, Interactions.DATABASE(); start_time=time(), kwargs...)
+    Database.db_insert_model(model; model_id=model_id)
+    return _simulate_distributed_barrier(model, Interactions.DATABASE(); kwargs..., start_time=time())
 end
 
-simulate(generator::Generators.ModelGenerator; kwargs...) = _simulate_distributed_barrier(generator, Interactions.DATABASE(); start_time=time(), kwargs...)
+simulate(generator::Generators.ModelGenerator; kwargs...) = _simulate_distributed_barrier(generator, Interactions.DATABASE(); kwargs..., start_time=time())
 
 function simulate(simulation_uuid::String; kwargs...)
-    @assert !isnothing(Interactions.DATABASE()) Database.NoDatabaseError()
-    return _simulate_model_barrier(simulation_uuid, Interactions.DATABASE(); start_time=time(), kwargs...)
+    Database.assert_db()
+    model_state::Tuple{Model, State} = Database.db_reconstruct_simulation(simulation_uuid) #NOTE: model needs to be consumed by state!
+    return _simulate_distributed_barrier(model_state, Interactions.DATABASE(); kwargs..., start_time=time())
 end
 
 function simulate(;kwargs...) #NOTE: probably don't want this method for simulation continuation
-    @assert !isnothing(Interactions.DATABASE()) Database.NoDatabaseError()
-    return _simulate_model_barrier(Interactions.DATABASE(); start_time=time(), kwargs...)
+    Database.assert_db()
+    simulation_uuids = Database.db_get_incomplete_simulation_uuids()
+    # println(simulation_uuids)
+    model_state_tuples = Vector{Tuple{Model, State}}()
+    for simulation_uuid in simulation_uuids
+        push!(model_state_tuples, Database.db_reconstruct_simulation(simulation_uuid))
+    end
+
+    return _simulate_distributed_barrier(model_state_tuples, Interactions.DATABASE(); kwargs..., start_time=time())
 end
 
 function get_producer(model::Model, samples::Integer)
