@@ -72,7 +72,7 @@ function single_parameter_sweep(sweep_parameter::Symbol, qps::Database.Query_sim
                 # if !ismissing(λ)
                 #     periods = sweep_group.period .* GraphsExt.edge_density(N, λ) .* N ./ 2
                 # end
-                confidence_interval = confint(bootstrap(getfield(Statistics, statistic), periods , BasicSampling(bootstrap_samples)), PercentileConfInt(conf_level))[1] #the first element contains the CI tuple
+                confidence_interval = confint(bootstrap(getfield(Statistics, statistic), periods, BasicSampling(bootstrap_samples)), PercentileConfInt(conf_level))[1] #the first element contains the CI tuple
 
                 push!(average_transition_time, confidence_interval[1]) #first element is the mean
                 # println(conf_interval_vals)

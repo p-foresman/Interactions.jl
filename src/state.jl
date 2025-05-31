@@ -6,23 +6,12 @@ mutable struct State{V, E, C}
     period::Int128 #NOTE: should this be added? if so, must make struct mutable and add const before agentgraph and preallocatedarrays
     complete::Bool
     const user_variables::UserVariables #allows for extra state variables if the user needs them
-
     const model_id::Union{Int, Nothing}
     prev_simulation_uuid::Union{String, Nothing} #needs to be updated when pushing to db periodically
     const random_seed::Union{Int, Nothing}
-    
     rng_state_str::Union{String, Nothing} #NOTE: change to Xoshiro down the line? Updated before being pushed to db
-
-    # process_id::Int
     timedout::Bool # used to determine whether a periodic push or a full exit is necessary
-    # is_stopping_condition_test::Function
-    # state::String # could update the state with something like "fractious", "equity", etc.. (would be too specific to this project)
 
-    #could add this stuff for ease of database use
-    # model_id
-    # sim_group_id
-    # prev_simulation_uuid
-    # distributed_uuid
 
     #NOTE: clean up these constructors!!
     function State(model::Model; user_variables::UserVariables=UserVariables(), model_id::Union{Int, Nothing}=nothing, random_seed::Union{Int, Nothing}=nothing) #NOTE: probably dont need user_variables in this constructor
