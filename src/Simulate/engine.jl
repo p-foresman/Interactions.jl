@@ -1,6 +1,65 @@
 
 ############################### FUNCTIONS #######################################
 
+#state is only mutated within the scope of this function (using multiple dispatch for to optimize main simulation loop)
+function simulate!(state::State, ::Nothing, ::Nothing; stopping_condition_reached::Function)
+    while true
+        run_period!(state.model, state)
+        if stopping_condition_reached(state)
+            Interactions.complete!(state)
+            break
+        end
+    end
+    Interactions.rng_state!(state) #update state's rng_state
+    return nothing
+end
+
+function simulate!(state::State, timeout::Int, ::Nothing; stopping_condition_reached::Function, start_time::Float64)
+    while true
+        run_period!(state.model, state)
+        if stopping_condition_reached(state)
+            Interactions.complete!(state)
+            break
+        elseif (time() - start_time) > timeout
+            Interactions.timedout!(state)
+            break
+        end
+    end
+    Interactions.rng_state!(state) #update state's rng_state
+    return nothing
+end
+
+function simulate!(state::State, ::Nothing, db_push_period::Int; stopping_condition_reached::Function)
+    while true
+        run_period!(state.model, state)
+        if stopping_condition_reached(state)
+            Interactions.complete!(state)
+            break
+        elseif iszero(period(state) % db_push_period)
+            break
+        end
+    end
+    Interactions.rng_state!(state) #update state's rng_state
+    return nothing
+end
+
+function simulate!(state::State, timeout::Int, db_push_period::Int; stopping_condition_reached::Function, start_time::Float64)
+    while true
+        run_period!(state.model, state)
+        if stopping_condition_reached(state)
+            Interactions.complete!(state)
+            break
+        elseif (time() - start_time) > timeout
+            Interactions.timedout!(state)
+            break
+        elseif iszero(period(state) % db_push_period)
+            break
+        end
+    end
+    Interactions.rng_state!(state) #update state's rng_state
+    return nothing
+end
+
 
 
 ######################## game algorithm ####################
