@@ -219,8 +219,8 @@ global SETTINGS #NOTE: want to eventually remove this. Was running into issues w
 include("Database/Database.jl")
 
 #include Generators
-# include("Generators/Generators.jl")
-# using .Generators
+include("Generators/Generators.jl")
+using .Generators
 
 #include default config and configure
 include("settings/config.jl")

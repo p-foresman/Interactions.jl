@@ -5,26 +5,47 @@ A type to store the values for a parameter sweep. Can be used to populate a data
 """
 struct ModelGenerator <: Generator
     game::Game
-    populations::Vector{Int}
+    population_sizes::Vector{Int}
     memory_lengths::Vector{Int}
     error_rates::Vector{Float64}
     starting_conditions::Vector{Tuple{String, UserVariables}} # ("starting_condition_name", UserVariables(var1=>'val1', var2=>'val2'))
     stopping_conditions::Vector{Tuple{String, UserVariables}} # ("stopping_condition_name", UserVariables(var1=>'val1', var2=>'val2'))
-    graphmodels::Vector{<:GraphModelGenerator}
+    graphmodels::Vector{GraphModelGenerator}
     size::Int
+    # function ModelGenerator(
+    #     game::Game,
+    #     population_sizes::Vector{Int},
+    #     memory_lengths::Vector{Int},
+    #     error_rates::Vector{Float64},
+    #     starting_conditions::Vector{Tuple{String, UserVariables}},
+    #     stopping_conditions::Vector{Tuple{String, UserVariables}},
+    #     graphmodels::Vector{GraphModelGenerator}
+    #     )
+    #     sz = sum(Interactions.volume(population_sizes, memory_lengths, error_rates, starting_conditions, stopping_conditions) .* size.(graphmodels))
+    #     return new(game, population_sizes, memory_lengths, error_rates, starting_conditions, stopping_conditions, graphmodels, sz)
+    # end
+end
 
-    function ModelGenerator(
-        game::Game,
-        populations::Vector{Int},
-        memory_lengths::Vector{Int},
-        error_rates::Vector{Float64},
-        starting_conditions::Vector{Tuple{String, UserVariables}},
-        stopping_conditions::Vector{Tuple{String, UserVariables}},
-        graphmodels::Vector{<:GraphModelGenerator}
-        )
-        sz = sum(Interactions.volume(populations, memory_lengths, error_rates, starting_conditions, stopping_conditions) .* size.(graphmodels))
-        return new(game, populations, memory_lengths, error_rates, starting_conditions, stopping_conditions, graphmodels, sz)
-    end
+function ModelGenerator(game::Game,
+    population_sizes::Union{Integer, Vector{<:Integer}},
+    memory_lengths::Union{Integer, Vector{<:Integer}},
+    error_rates::Union{Real, Vector{<:Real}},
+    starting_conditions::Union{Tuple{String, UserVariables}, Vector{Tuple{String, UserVariables}}},
+    stopping_conditions::Union{Tuple{String, UserVariables}, Vector{Tuple{String, UserVariables}}},
+    graphmodels::Union{GraphModelGenerator, Vector{GraphModelGenerator}}
+)   
+    population_sizes = [population_sizes...]
+    memory_lengths = [memory_lengths...]
+    error_rates = [error_rates...]
+    if starting_conditions isa Tuple{String, UserVariables} starting_conditions = Vector{Tuple{String, UserVariables}}([starting_conditions]) end
+    if stopping_conditions isa Tuple{String, UserVariables} stopping_conditions = Vector{Tuple{String, UserVariables}}([stopping_conditions]) end
+    graphmodels = if graphmodels isa GraphModelGenerator graphmodels = Vector{GraphModelGenerator}([graphmodels]) end
+
+    println(graphmodels)
+
+    sz = sum(Interactions.volume(population_sizes, memory_lengths, error_rates, starting_conditions, stopping_conditions) .* size.(graphmodels))
+
+    return ModelGenerator(game, population_sizes, memory_lengths, error_rates, starting_conditions, stopping_conditions, graphmodels, sz)
 end
 
 # Base.size(generator::ModelGenerator) = getfield(generator, :size) #NOTE: could have one size function for all generators
@@ -32,7 +53,7 @@ end
 
 function generate_model(generator::ModelGenerator, index::Integer) #NOTE: could use iterator method here too, but would be much less efficient
     count = 0
-    for population in generator.populations
+    for population in generator.population_sizes
         for memory_length in generator.memory_lengths
             for error_rate in generator.error_rates
                 for starting_condition in generator.starting_conditions
@@ -55,7 +76,7 @@ function generate_model(generator::ModelGenerator, index::Integer) #NOTE: could 
 end
 
 function generate_database(generator::ModelGenerator)
-    for population in generator.populations
+    for population in generator.population_sizes
         for memory_length in generator.memory_lengths
             for error_rate in generator.error_rates
                 for starting_condition in generator.starting_conditions

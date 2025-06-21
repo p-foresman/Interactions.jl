@@ -1,17 +1,16 @@
 module Generators
 
 export
-    CompleteModelGenerator,
-    ErdosRenyiModelGenerator,
-    SmallWorldModelGenerator,
-    ScaleFreeModelGenerator,
-    StochasticBlockModelGenerator,
+    GraphModelGenerator,
     ModelGenerator,
     ModelGeneratorSet,
     generate_model,
     get_model_id #NOTE: this one is specific for my stuff on OSG, maybe delete
 
-import ..Database
+import
+    ..Database,
+    ..Registry,
+    ..GraphsExt
 
 using ..Interactions
 

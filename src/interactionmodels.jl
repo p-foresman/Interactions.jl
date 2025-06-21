@@ -15,9 +15,9 @@ struct GraphModel <: InteractionModel
     fn_name::String
     params::NamedTuple #(param=arg,) notation
     param_types::Tuple #might not need
-    kwargs::Dict
+    kwargs::Dict{Symbol, Any}
 
-    function GraphModel(fn_name::String, args::NamedTuple, kwargs::Dict{Symbol, Any})
+    function GraphModel(fn_name::String, args::NamedTuple, kwargs::Dict{Symbol, Any}=Dict{Symbol, Any}())
         # @assert #make sure fn_name is in Registry.GraphModels
         @assert isdefined(Registry.GraphModels, Symbol(fn_name)) "'fn_name' provided does not correlate to a defined function in the Registry. Must use @graphmodel macro before function to register it"
         # @assert all(i -> isa(i, Real), values(args)) "All args must be <:Real" #NOTE: should we require this?

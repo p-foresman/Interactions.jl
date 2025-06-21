@@ -1,60 +1,46 @@
-abstract type GraphModelGenerator <: Generator end
+# abstract type GraphModelGenerator <: Generator end
 
-
-#NOTE: could somehow generate these out of the actual graphmodels (they have pretty much the same fields, theres got to be a way)
-struct CompleteModelGenerator <: GraphModelGenerator
+struct GraphModelGenerator <: Generator
+    fn_name::String
+    params::NamedTuple #(param=[args...],) notation
+    kwargs::Dict{Symbol, Any} #NOTE: need to figure out how to implement this!
     size::Int
 
-    CompleteModelGenerator() = new(1)
+    function GraphModelGenerator(fn_name::String, args::NamedTuple, kwargs::Dict{Symbol, Any}=Dict{Symbol, Any}())
+        @assert isdefined(Registry.GraphModels, Symbol(fn_name)) "'fn_name' provided does not correlate to a defined function in the Registry. Must use @graphmodel macro before function to register it"
+        f = getfield(Registry.GraphModels, Symbol(fn_name)) #get the function
+        arg_types = Vector{Type}()
+        for arg in args
+            type = typeof(arg)
+            if type <: Vector
+                type = typeof(first(arg))
+                all(a->typeof(a)==type, arg)
+            end
+            push!(arg_types, type)
+        end
+        m = which(f, (Parameters, arg_types...)) #get the method associated with the arg types provided. This will error if the arguments provided don't match the type specifications for the Function
+        param_types = Base.arg_decl_parts(m)[2][3:end] #first index is function name, second should be Parameters type
+        arg_names = keys(args)
+        for i in eachindex(param_types) #ensure the orders of arguments are right. If these are right, args is sufficiently validated since type validation was completed previously
+            @assert Symbol(param_types[i][1]) == arg_names[i] "arguments provided must be in the order of the function parameters"
+        end
+        @assert Base.return_types(f, (Parameters, arg_types...))[1] <: GraphsExt.Graphs.SimpleGraph "the fn provided must return a Graphs.SimpleGraph"
+        #@assert all(i -> isa(i, Real) || isa(i, Vector{<:Real}), values(params)) "All params must Union{Real, Vector{<:Real}}"
+        k = keys(args)
+        v = map(x->isa(x, Vector) ? x : [x], collect(args))
+        return new(fn_name, NamedTuple{k}(v), kwargs, Interactions.volume(v...)) #convert back into NamedTuple (where all values are now Vector{<:Real})
+    end
+    GraphModelGenerator(fn_name::String; kwargs::Dict{Symbol, Any}=Dict{Symbol, Any}(), args...) = GraphModelGenerator(fn_name, NamedTuple(args), kwargs)
 end
 
-struct ErdosRenyiModelGenerator <: GraphModelGenerator
-    λ::Vector{Float64}
-    size::Int
-
-    ErdosRenyiModelGenerator(λ::Vector{<:Real}) = new(λ, length(λ)) #NOTE: not yet using λ in these, so size is just 1 here
+function generate_model(graphmodel_generator::GraphModelGenerator, index::Integer)
+    k = keys(graphmodel_generator.params)
+    v = first(Iterators.drop(Iterators.product(values(graphmodel_generator.params)...), index - 1))
+    return GraphModel(graphmodel_generator.fn_name, NamedTuple{k}(v), graphmodel_generator.kwargs)
 end
 
-struct SmallWorldModelGenerator <: GraphModelGenerator
-    λ::Vector{Float64}
-    β::Vector{Float64}
-    size::Int
-
-    SmallWorldModelGenerator(λ::Vector{<:Real}, β::Vector{Float64}) = new(λ, β, Interactions.volume(λ, β))
-end
-
-struct ScaleFreeModelGenerator <: GraphModelGenerator
-    λ::Vector{Float64}
-    α::Vector{Float64}
-    size::Int
-
-    ScaleFreeModelGenerator(λ::Vector{<:Real}, α::Vector{Float64}) = new(λ, α, Interactions.volume(λ, α))
-end
-
-struct StochasticBlockModelGenerator <: GraphModelGenerator
-    λ::Vector{Float64}
-    blocks::Vector{Int}
-    p_in::Vector{Float64}
-    p_out::Vector{Float64}
-    size::Int
-
-    StochasticBlockModelGenerator(λ::Vector{<:Real}, blocks::Vector{Int}, p_in::Vector{Float64}, p_out::Vector{Float64}) = new(λ, blocks, p_in, p_out, Interactions.volume(λ, blocks, p_in, p_out))
-end
+#NOTE: make a GraphModelGeneratorSet
 
 # Base.size(graphmodel_generator::GraphModelGenerator) = getfield(graphmodel_generator, :size)
 
-get_params(vec::Vector...; index::Integer) = first(Iterators.drop(Iterators.product(vec...), index - 1))
-
-generate_model(::CompleteModelGenerator, index::Integer) = index == 1 ? CompleteModel() : throw("index must be 1") #NOTE: this seems like a sketchy way to do this, but along with the iterate() below, should never error
-generate_model(graphmodel_generator::ErdosRenyiModelGenerator, index::Integer) = ErdosRenyiModel(graphmodel_generator.λ[index])
-generate_model(graphmodel_generator::SmallWorldModelGenerator, index::Integer) = SmallWorldModel(get_params(graphmodel_generator.λ, graphmodel_generator.β; index=index)...)
-generate_model(graphmodel_generator::ScaleFreeModelGenerator, index::Integer) = ScaleFreeModel(get_params(graphmodel_generator.λ, graphmodel_generator.α; index=index)...)
-generate_model(graphmodel_generator::StochasticBlockModelGenerator, index::Integer) = StochasticBlockModel(get_params(graphmodel_generator.λ, graphmodel_generator.blocks, graphmodel_generator.p_in, graphmodel_generator.p_out; index=index)...)
-
-# function Base.iterate(graphmodel_generator::GraphModelGenerator, state=1)
-#     if state > graphmodel_generator.size
-#         return nothing
-#     else
-#         return (generate_model(graphmodel_generator, state), state + 1)
-#     end    
-# end
+#get_params(vec::Vector...; index::Integer) = first(Iterators.drop(Iterators.product(vec...), index - 1))

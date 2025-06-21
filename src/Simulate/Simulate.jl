@@ -47,6 +47,8 @@ end
 
 simulate(generator::Generators.ModelGenerator; kwargs...) = simulate_supervisor(generator, Interactions.DATABASE(); kwargs..., start_time=time())
 
+simulate(generator::Generators.ModelGeneratorSet; kwargs...) = simulate_supervisor(generator, Interactions.DATABASE(); kwargs..., start_time=time())
+
 function simulate(simulation_uuid::String; kwargs...)
     Database.assert_db()
     model_state::Tuple{Model, State} = Database.db_reconstruct_simulation(simulation_uuid) #NOTE: model needs to be consumed by state!
@@ -67,7 +69,7 @@ end
 
 
 
-function simulate_supervisor(recipe::Union{Model, ModelGenerator, Vector{State}}, db_info::Database.DatabaseSettings; start_time::Float64, samples::Integer=1, db_group_id::Union{Integer, Nothing} = nothing)
+function simulate_supervisor(recipe::Union{Model, Generators.ModelGenerator, Generators.ModelGeneratorSet, Vector{State}}, db_info::Database.DatabaseSettings; start_time::Float64, samples::Integer=1, db_group_id::Union{Integer, Nothing} = nothing)
     timeout = Interactions.SETTINGS.timeout
     db_push_period = db_info.push_period
     
