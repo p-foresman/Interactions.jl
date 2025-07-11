@@ -302,7 +302,7 @@ function sql_insert_graphmodel_parameter(graphmodel_id::Integer, name::String, t
     """
 end
 
-function sql_insert_parameters(params::Parameters, parameters_str::String) #NOTE: params should be broken up before this so we dont have to use Interactions functions
+function sql_insert_parameters(params::Types.Parameters, parameters_str::String) #NOTE: params should be broken up before this so we dont have to use Interactions functions*** (everything else is)
     """
     INSERT OR IGNORE INTO parameters
     (
@@ -315,11 +315,11 @@ function sql_insert_parameters(params::Parameters, parameters_str::String) #NOTE
     )
     VALUES
     (
-        $(Interactions.number_agents(params)),
-        $(Interactions.memory_length(params)),
-        $(Interactions.error_rate(params)),
-        '$(Interactions.starting_condition_fn_name(params))',
-        '$(Interactions.stopping_condition_fn_name(params))',
+        $(Types.number_agents(params)),
+        $(Types.memory_length(params)),
+        $(Types.error_rate(params)),
+        '$(Types.starting_condition_fn_name(params))',
+        '$(Types.stopping_condition_fn_name(params))',
         '$parameters_str'
     )
     ON CONFLICT (parameters) DO UPDATE
@@ -369,7 +369,7 @@ function execute_insert_graphmodel_parameter(db::SQLiteDB, graphmodel_id::Intege
     return id
 end
 
-function execute_insert_parameters(db::SQLiteDB, params::Parameters, parameters_str::String)
+function execute_insert_parameters(db::SQLiteDB, params::Types.Parameters, parameters_str::String)
     id::Int = db_query(db, sql_insert_parameters(params, parameters_str))[1, :id]
     return id
 end
@@ -378,7 +378,7 @@ end
 function execute_insert_model(db_info::SQLiteInfo,
                             game_name::String, game_str::String, payoff_matrix_size::String,
                             graphmodel_name::String, graphmodel_display::String, graphmodel_kwargs::String, graphmodel_params::NamedTuple, #NOTE: should try to make all parameters String typed so they can be plugged right into sql
-                            params::Parameters, parameters_str::String;
+                            params::Types.Parameters, parameters_str::String;
                             model_id::Union{Nothing, Integer}=nothing)
 
 

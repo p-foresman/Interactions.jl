@@ -66,21 +66,21 @@ db_init(::Nothing) = NoDatabaseError()
 db_insert_sim_group(description::String) = db_insert_sim_group(Interactions.MAIN_DB(), description)
 db_insert_sim_group(::Nothing, ::String) = NoDatabaseError()
 
-db_insert_game(game::Game) = db_insert_game(Interactions.MAIN_DB(), game)
-db_insert_game(::Nothing, ::Game) = NoDatabaseError()
+db_insert_game(game::Types.Game) = db_insert_game(Interactions.MAIN_DB(), game)
+db_insert_game(::Nothing, ::Types.Game) = NoDatabaseError()
 
-db_insert_graphmodel(graphmodel::GraphModel) = db_insert_graphmodel(Interactions.MAIN_DB(), graphmodel)
-db_insert_graphmodel(::Nothing, ::GraphModel) = NoDatabaseError()
+db_insert_graphmodel(graphmodel::Types.GraphModel) = db_insert_graphmodel(Interactions.MAIN_DB(), graphmodel)
+db_insert_graphmodel(::Nothing, ::Types.GraphModel) = NoDatabaseError()
 
-db_insert_parameters(params::Parameters, use_seed::Bool) = db_insert_parameters(Interactions.MAIN_DB(), params, use_seed)
-db_insert_parameters(::Nothing, ::Parameters, ::Bool) = NoDatabaseError()
+db_insert_parameters(params::Types.Parameters, use_seed::Bool) = db_insert_parameters(Interactions.MAIN_DB(), params, use_seed)
+db_insert_parameters(::Nothing, ::Types.Parameters, ::Bool) = NoDatabaseError()
 
 
-db_insert_model(model::Model; model_id::Union{Nothing, Integer}=nothing) = db_insert_model(Interactions.MAIN_DB(), model, model_id=model_id) #returns model_id::Int
-db_insert_model(::Nothing, ::Model) = NoDatabaseError() #NOTE: return nothing here instead of model_id since no database is configured. (do we want NoDatabaseError() instead?) could make custom NoDB type to return!
+db_insert_model(model::Types.Model; model_id::Union{Nothing, Integer}=nothing) = db_insert_model(Interactions.MAIN_DB(), model, model_id=model_id) #returns model_id::Int
+db_insert_model(::Nothing, ::Types.Model) = NoDatabaseError() #NOTE: return nothing here instead of model_id since no database is configured. (do we want NoDatabaseError() instead?) could make custom NoDB type to return!
 # db_try_insert_model(model::Model; model_id::Union{Nothing, Integer}=nothing) = db_insert_model(Interactions.MAIN_DB(), model, model_id=model_id)
 
-db_insert_simulation(state::State, model_id::Integer, sim_group_id::Union{Integer, Nothing} = nothing) = db_insert_simulation(Interactions.MAIN_DB(), state, model_id, sim_group_id; full_store=Interactions.DATABASE().full_store)
+db_insert_simulation(state::Types.State, model_id::Integer, sim_group_id::Union{Integer, Nothing} = nothing) = db_insert_simulation(Interactions.MAIN_DB(), state, model_id, sim_group_id; full_store=Interactions.DATABASE().full_store)
 db_insert_simulation(::Nothing, args...) = NoDatabaseError()
 
 db_has_incomplete_simulations() = db_has_incomplete_simulations(Interactions.MAIN_DB())

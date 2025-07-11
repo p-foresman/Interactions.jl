@@ -8,11 +8,13 @@ export
     get_model_id #NOTE: this one is specific for my stuff on OSG, maybe delete
 
 import
+    ..Types,
     ..Database,
     ..Registry,
-    ..GraphsExt
+    ..GraphsExt,
+    ..Interactions
 
-using ..Interactions
+# using ..Interactions
 
 abstract type Generator end #supertype to all generators
 

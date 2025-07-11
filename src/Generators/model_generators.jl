@@ -4,12 +4,12 @@
 A type to store the values for a parameter sweep. Can be used to populate a database with model data and to generate a model given a model id.
 """
 struct ModelGenerator <: Generator
-    game::Game
+    game::Types.Game
     population_sizes::Vector{Int}
     memory_lengths::Vector{Int}
     error_rates::Vector{Float64}
-    starting_conditions::Vector{Tuple{String, UserVariables}} # ("starting_condition_name", UserVariables(var1=>'val1', var2=>'val2'))
-    stopping_conditions::Vector{Tuple{String, UserVariables}} # ("stopping_condition_name", UserVariables(var1=>'val1', var2=>'val2'))
+    starting_conditions::Vector{Tuple{String, Types.UserVariables}} # ("starting_condition_name", UserVariables(var1=>'val1', var2=>'val2'))
+    stopping_conditions::Vector{Tuple{String, Types.UserVariables}} # ("stopping_condition_name", UserVariables(var1=>'val1', var2=>'val2'))
     graphmodels::Vector{GraphModelGenerator}
     size::Int
     # function ModelGenerator(
@@ -26,22 +26,22 @@ struct ModelGenerator <: Generator
     # end
 end
 
-function ModelGenerator(game::Game,
+function ModelGenerator(game::Types.Game,
     population_sizes::Union{Integer, Vector{<:Integer}},
     memory_lengths::Union{Integer, Vector{<:Integer}},
     error_rates::Union{Real, Vector{<:Real}},
-    starting_conditions::Union{Tuple{String, UserVariables}, Vector{Tuple{String, UserVariables}}},
-    stopping_conditions::Union{Tuple{String, UserVariables}, Vector{Tuple{String, UserVariables}}},
+    starting_conditions::Union{Tuple{String, Types.UserVariables}, Vector{Tuple{String, Types.UserVariables}}},
+    stopping_conditions::Union{Tuple{String, Types.UserVariables}, Vector{Tuple{String, Types.UserVariables}}},
     graphmodels::Union{GraphModelGenerator, Vector{GraphModelGenerator}}
 )   
     population_sizes = [population_sizes...]
     memory_lengths = [memory_lengths...]
     error_rates = [error_rates...]
-    if starting_conditions isa Tuple{String, UserVariables} starting_conditions = Vector{Tuple{String, UserVariables}}([starting_conditions]) end
-    if stopping_conditions isa Tuple{String, UserVariables} stopping_conditions = Vector{Tuple{String, UserVariables}}([stopping_conditions]) end
+    if starting_conditions isa Tuple{String, Types.UserVariables} starting_conditions = Vector{Tuple{String, Types.UserVariables}}([starting_conditions]) end
+    if stopping_conditions isa Tuple{String, Types.UserVariables} stopping_conditions = Vector{Tuple{String, Types.UserVariables}}([stopping_conditions]) end
     graphmodels = if graphmodels isa GraphModelGenerator graphmodels = Vector{GraphModelGenerator}([graphmodels]) end
 
-    println(graphmodels)
+    # println(graphmodels)
 
     sz = sum(Interactions.volume(population_sizes, memory_lengths, error_rates, starting_conditions, stopping_conditions) .* size.(graphmodels))
 
@@ -58,12 +58,12 @@ function generate_model(generator::ModelGenerator, index::Integer) #NOTE: could 
             for error_rate in generator.error_rates
                 for starting_condition in generator.starting_conditions
                     for stopping_condition in generator.stopping_conditions
-                        params = Parameters(population, memory_length, error_rate, starting_condition[1], stopping_condition[1], user_variables=merge(starting_condition[2], stopping_condition[2]))
+                        params = Types.Parameters(population, memory_length, error_rate, starting_condition[1], stopping_condition[1], user_variables=merge(starting_condition[2], stopping_condition[2]))
                         for graphmodel_generator in generator.graphmodels
                             for graphmodel in graphmodel_generator
                                 count += 1
                                 if count == index
-                                    return Model(generator.game, params, graphmodel)
+                                    return Types.Model(generator.game, params, graphmodel)
                                 end
                             end
                         end
@@ -81,10 +81,10 @@ function generate_database(generator::ModelGenerator)
             for error_rate in generator.error_rates
                 for starting_condition in generator.starting_conditions
                     for stopping_condition in generator.stopping_conditions
-                        params = Parameters(population, memory_length, error_rate, starting_condition[1], stopping_condition[1], user_variables=merge(starting_condition[2], stopping_condition[2]))
+                        params = Types.Parameters(population, memory_length, error_rate, starting_condition[1], stopping_condition[1], user_variables=merge(starting_condition[2], stopping_condition[2]))
                         for graphmodel_generator in generator.graphmodels
                             for graphmodel in graphmodel_generator
-                                model = Model(generator.game, params, graphmodel)
+                                model = Types.Model(generator.game, params, graphmodel)
                                 Database.db_insert_model(model)
                             end
                         end

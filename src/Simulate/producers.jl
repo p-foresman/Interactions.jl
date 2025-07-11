@@ -1,4 +1,4 @@
-function get_producer(model::Model, samples::Integer)
+function get_producer(model::Types.Model, samples::Integer)
     seed::Union{Int, Nothing} = Interactions.SETTINGS.use_seed ? Interactions.SETTINGS.random_seed : nothing
     function producer(channel::Channel)
         model_id = Database.db_insert_model(model)
@@ -43,7 +43,7 @@ function get_producer(generator::Union{Generators.ModelGenerator, Generators.Mod
     return (producer, generator.size * samples)
 end
 
-function get_producer(states::Vector{State}, samples::Integer)
+function get_producer(states::Vector{Types.State}, samples::Integer)
     function producer(channel::Channel)
         for state in states
             for _ in 1:samples

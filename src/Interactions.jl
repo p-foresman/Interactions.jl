@@ -6,119 +6,119 @@ Package used to simulate games over network interaction structures.
 module Interactions
 
 export
-    # types
-    Model,
-    Models,
-    Game,
-    Parameters,
-    GraphModel,
-    Agent,
-    State, #should this be exported? (NOTE: currently needs to be for other modules, fix this)
-    AgentGraph, #should this be exported?
+    # # types
+    # Model,
+    # Models,
+    # Game,
+    # Parameters,
+    # GraphModel,
+    # Agent,
+    # State, #should this be exported? (NOTE: currently needs to be for other modules, fix this)
+    # AgentGraph, #should this be exported?
 
-    # accessors
-    displayname,
-
-
-    #old
-    game,
-    payoff_matrix,
-    size,
-    strategies,
-    random_strategy,
-
-    graphmodel,
+    # # accessors
+    # displayname,
 
 
-    parameters,
-    number_agents,
-    memory_length,
-    error_rate,
-    matches_per_period,
-    random_seed,
-    UserVariables,
-    user_variables,
-    set_user_variable!,
+    # #old
+    # game,
+    # payoff_matrix,
+    # size,
+    # strategies,
+    # random_strategy,
 
-    # startingcondition,
-    type, #rename?
-
-    # stoppingcondition,
-    # strategy, #rename?
-    # sufficient_equity,
-    # sufficient_equity!,
-    # sufficient_transitioned,
-    # sufficient_transitioned!,
-    # period_cutoff,
-    # period_cutoff!,
-    # period_count,
-    # period_count!,
-    # increment_period_count!,
-
-    period,
+    # graphmodel,
 
 
-    # agentgraph,
-    # graph,
-    agents,
-    # # edges, #rename?
-    # random_edge,
-    # components,
-    # num_components,
-    # # component_vertex_sets,
-    # # component_edge_sets,
-    # # random_component_edge,
-    number_hermits,
+    # parameters,
+    # number_agents,
+    # memory_length,
+    # error_rate,
+    # matches_per_period,
+    # random_seed,
+    # UserVariables,
+    # user_variables,
+    # set_user_variable!,
 
-    ishermit, #these accessors only implemented for Agent, should they be implemented for Model too?
-    memory,
-    generate_graph,
-    generate_graph!,
-    # rational_choice,
-    # rational_choice!,
-    # choice,
-    # choice!,
+    # # startingcondition,
+    # type, #rename?
 
-    # preallocatedarrays,
-    # players,
-    # player!,
-    # set_players!,
-    # opponent_strategy_recollection,
-    # opponent_strategy_recollection!,
-    # increment_opponent_strategy_recollection!,
-    # opponent_strategy_probabilities,
-    # expected_utilities,
-    # expected_utilities!,
-    # increment_expected_utilities!,
-    # reset_arrays!,
+    # # stoppingcondition,
+    # # strategy, #rename?
+    # # sufficient_equity,
+    # # sufficient_equity!,
+    # # sufficient_transitioned,
+    # # sufficient_transitioned!,
+    # # period_cutoff,
+    # # period_cutoff!,
+    # # period_count,
+    # # period_count!,
+    # # increment_period_count!,
 
     # period,
-    # period!,
-    # increment_period,
 
-    graph,
-    graph!,
-    displayname,
-    # reset_model!,
-    # regenerate_model,
 
-    # constructors
-    construct_sim_params_list,
-    construct_model_list,
-    select_and_construct_model,
+    # # agentgraph,
+    # # graph,
+    # agents,
+    # # # edges, #rename?
+    # # random_edge,
+    # # components,
+    # # num_components,
+    # # # component_vertex_sets,
+    # # # component_edge_sets,
+    # # # random_component_edge,
+    # number_hermits,
 
-    #NOTE: make Generators submodule
-    ModelGenerator,
-    ErdosRenyiModelGenerator,
-    SmallWorldModelGenerator,
-    ScaleFreeModelGenerator,
-    StochasticBlockModelGenerator,
+    # ishermit, #these accessors only implemented for Agent, should they be implemented for Model too?
+    # memory,
+    # generate_graph,
+    # generate_graph!,
+    # # rational_choice,
+    # # rational_choice!,
+    # # choice,
+    # # choice!,
+
+    # # preallocatedarrays,
+    # # players,
+    # # player!,
+    # # set_players!,
+    # # opponent_strategy_recollection,
+    # # opponent_strategy_recollection!,
+    # # increment_opponent_strategy_recollection!,
+    # # opponent_strategy_probabilities,
+    # # expected_utilities,
+    # # expected_utilities!,
+    # # increment_expected_utilities!,
+    # # reset_arrays!,
+
+    # # period,
+    # # period!,
+    # # increment_period,
+
+    # graph,
+    # graph!,
+    # displayname,
+    # # reset_model!,
+    # # regenerate_model,
+
+    # # constructors
+    # construct_sim_params_list,
+    # construct_model_list,
+    # select_and_construct_model,
+
+    # #NOTE: make Generators submodule
+    # ModelGenerator,
+    # ErdosRenyiModelGenerator,
+    # SmallWorldModelGenerator,
+    # ScaleFreeModelGenerator,
+    # StochasticBlockModelGenerator,
 
     ####################
 
     #simulation
     simulate,
-    count_strategy,
+    # count_strategy,
 
     # simulate_distributed,
     # simulation_iterator,
@@ -140,8 +140,8 @@ export
     # multipleTimeSeriesPlot,
 
     #utility
-    OrNothing,
-    resetprocs,
+    # OrNothing,
+    # resetprocs,
 
     #graph constructors
     # erdos_renyi_rg,
@@ -162,48 +162,49 @@ export
 
     # Model, #NOTE: do we want this, or do we want to expose the methods from this in the core of Interactions?
     Database,
-    Analyze,
+    # Analyze,
 
     @graphmodel,
     @startingcondition,
     @stoppingcondition
 
 
-using
-    Random,
-    # DataFrames,
-    # SQLite,
-    # LibPQ,
-    StaticArrays,
-    Distributed,
-    DataStructures,
-    JSON3,
-    # Memoize,
-    InteractiveUtils,
-    TimerOutputs, #NOTE: get rid of this
-    Suppressor, #NOTE: get rid of this? (used in config i guess),
-    ParallelDataTransfer
+using Distributed
+#     Random,
+#     # DataFrames,
+#     # SQLite,
+#     # LibPQ,
+#     StaticArrays,
+    # Distributed
+#     DataStructures,
+#     JSON3,
+#     # Memoize,
+#     InteractiveUtils,
+#     TimerOutputs, #NOTE: get rid of this
+#     Suppressor, #NOTE: get rid of this? (used in config i guess),
+#     ParallelDataTransfer
 
 #basic utility functions
 include("utility.jl")
 
 #extensions of Graphs.jl graph constructors
 include("GraphsExt/GraphsExt.jl")
-import .GraphsExt
+#import .GraphsExt
 
 include("Registry/Registry.jl")
-import .Registry: @graphmodel, @startingcondition, @stoppingcondition
+#import .Registry: @graphmodel, @startingcondition, @stoppingcondition
 
-#core of Interactions
-include("games.jl")
-include("parameters.jl")
-include("interactionmodels.jl")
-include("agents.jl")
-include("agentgraph.jl")
-include("preallocatedarrays.jl")
-include("model.jl")
-include("state.jl")
-include("structtypes.jl")
+#types used in Interactions
+include("Types/Types.jl")
+# include("games.jl")
+# include("parameters.jl")
+# include("interactionmodels.jl")
+# include("agents.jl")
+# include("agentgraph.jl")
+# include("preallocatedarrays.jl")
+# include("model.jl")
+# include("state.jl")
+# include("structtypes.jl")
 
 
 #include StructTypes for reconstructing custom structures
@@ -216,14 +217,14 @@ include("Database/Database.jl")
 
 #include Generators
 include("Generators/Generators.jl")
-using .Generators
+#using .Generators
 
 #include default config and configure
 include("settings/config.jl")
 
 #simulation functions
 include("Simulate/Simulate.jl")
-import .Simulate: simulate, count_strategy
+#import .Simulate: simulate, count_strategy
 
 #Analyze module contains analysis and plotting functions
 # include("Analyze/Analyze.jl")

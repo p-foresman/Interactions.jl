@@ -75,7 +75,7 @@ function db_insert_group(db_info::SQLiteInfo, description::String)
     return group_id
 end
 
-function db_insert_game(db_info::SQLiteInfo, game::Game)
+function db_insert_game(db_info::SQLiteInfo, game::Types.Game)
     name = name(game)
     game_str = JSON3.write(game)
     size = JSON3.write(size(game)) #NOTE: why JSON3.write instead of string()
@@ -100,7 +100,7 @@ end
 
 
 
-function sql_dump_graphmodel(graphmodel::GM) where {GM<:GraphModel}
+function sql_dump_graphmodel(graphmodel::GM) where {GM<:Types.GraphModel}
     params = ""
     values = ""
     for param in fieldnames(GM)
@@ -120,11 +120,11 @@ function sql_dump_graphmodel(graphmodel::GM) where {GM<:GraphModel}
     return (params, values)
 end
 
-function db_insert_graphmodel(db_info::SQLiteInfo, graphmodel::GraphModel)
+function db_insert_graphmodel(db_info::SQLiteInfo, graphmodel::Types.GraphModel)
     model_graphmodel = graphmodel(model)
-    graphmodel_name = Interactions.fn_name(model_graphmodel)
-    graphmodel_display = Interactions.displayname(model_graphmodel)
-    graphmodel_params = Interactions.params(model_graphmodel)
+    graphmodel_name = Types.fn_name(model_graphmodel)
+    graphmodel_display = Types.displayname(model_graphmodel)
+    graphmodel_params = Types.params(model_graphmodel)
     graphmodel_kwargs = string(model_graphmodel.kwargs)
 
     # graphmodel_str = JSON3.write(graphmodel)
@@ -151,7 +151,7 @@ function db_insert_graphmodel(db_info::SQLiteInfo, graphmodel::GraphModel)
     return graphmodel_id
 end
 
-function db_insert_parameters(db_info::SQLiteInfo, params::Parameters)
+function db_insert_parameters(db_info::SQLiteInfo, params::Types.Parameters)
     params_json_str = JSON3.write(params)
 
     parameters_id = nothing
@@ -173,24 +173,24 @@ function db_insert_parameters(db_info::SQLiteInfo, params::Parameters)
 end
 
 
-function db_insert_model(db_info::SQLiteInfo, model::Model; model_id::Union{Nothing, Integer}=nothing)
-    model_game = game(model)
-    game_name = displayname(model_game)
+function db_insert_model(db_info::SQLiteInfo, model::Types.Model; model_id::Union{Nothing, Integer}=nothing)
+    model_game = Types.game(model)
+    game_name = Types.displayname(model_game)
     game_str = JSON3.write(model_game)
-    game_size = JSON3.write(Interactions.size(model_game)) #NOTE: why JSON3.write instead of string()
+    game_size = JSON3.write(Types.size(model_game)) #NOTE: why JSON3.write instead of string()
 
-    model_graphmodel = graphmodel(model)
-    graphmodel_name = Interactions.fn_name(model_graphmodel)
-    graphmodel_display = Interactions.displayname(model_graphmodel)
-    graphmodel_params = Interactions.params(model_graphmodel)
+    model_graphmodel = Types.graphmodel(model)
+    graphmodel_name = Types.fn_name(model_graphmodel)
+    graphmodel_display = Types.displayname(model_graphmodel)
+    graphmodel_params = Types.params(model_graphmodel)
     graphmodel_kwargs = string(model_graphmodel.kwargs)
     # model_graphmodel = graphmodel(model)
     # graphmodel_display = displayname(model_graphmodel)
-    # graphmodel_type = Interactions.type(model_graphmodel)
+    # graphmodel_type = Types.type(model_graphmodel)
     # graphmodel_str = JSON3.write(model_graphmodel)
     # graphmodel_parameters_str, graphmodel_values_str = sql_dump_graphmodel(model_graphmodel)
 
-    model_params = parameters(model)
+    model_params = Types.parameters(model)
     parameters_str = JSON3.write(model_params)
 
     # model_startingcondition = startingcondition(model)
@@ -230,7 +230,7 @@ function db_insert_model(db_info::SQLiteInfo, model::Model; model_id::Union{Noth
 end
 
 
-function db_insert_simulation(db_info::SQLiteInfo, state::State, model_id::Integer, sim_group_id::Union{Integer, Nothing} = nothing; full_store::Bool=true)
+function db_insert_simulation(db_info::SQLiteInfo, state::Types.State, model_id::Integer, sim_group_id::Union{Integer, Nothing} = nothing; full_store::Bool=true)
     data_json = "{}"
     if isdefined(Main, :get_data) #NOTE: this is the quick and dirty way to do this. Ideally need to validate that the get_data function takes State and returns Dict{String, Any}(). (probably should pass the function to state)
                                  # this also doesnt allow for multiple get_data functions to be defined! need to make more robust
@@ -241,7 +241,7 @@ function db_insert_simulation(db_info::SQLiteInfo, state::State, model_id::Integ
     simulation_uuid = nothing
     while isnothing(simulation_uuid)
         try
-            simulation_uuid = execute_insert_simulation(db_info, model_id, sim_group_id, state.prev_simulation_uuid, Interactions.period(state), Int(Interactions.iscomplete(state)), JSON3.write(user_variables(state)), data_json, state_bin)
+            simulation_uuid = execute_insert_simulation(db_info, model_id, sim_group_id, state.prev_simulation_uuid, Types.period(state), Int(Types.iscomplete(state)), JSON3.write(user_variables(state)), data_json, state_bin)
             #simulation_status = simulation_insert_result.status_message
             # simulation_uuid = simulation_insert_result.simulation_uuid
         catch e
@@ -263,10 +263,10 @@ end
 function db_reconstruct_model(db_info::SQLiteInfo, model_id::Integer)
     df = execute_query_models(db_info, model_id)
 
-    params = JSON3.read(df[1, :parameters], Parameters)
+    params = JSON3.read(df[1, :parameters], Types.Parameters)
     payoff_matrix_size = JSON3.read(df[1, :payoff_matrix_size], Tuple)
     game = JSON3.read(df[1, :game], Game{payoff_matrix_size[1], payoff_matrix_size[2], prod(payoff_matrix_size)})
-    graphmodel = JSON3.read(df[1, :graphmodel], GraphModel)
+    graphmodel = JSON3.read(df[1, :graphmodel], Types.GraphModel)
     # regen_graph = Graph(df[1, :graph_adj_matrix])
 
     model = Model(game, params, graphmodel) #, regen_graph)

@@ -1,10 +1,12 @@
 module Database
 
 import
-    ..GraphsExt
+    ..Types,
+    ..GraphsExt,
+    ..Interactions
 
 using
-    ..Interactions,
+    # ..Interactions,
     DataFrames,
     JSON3,
     UUIDs,
