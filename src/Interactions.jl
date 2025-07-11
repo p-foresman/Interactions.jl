@@ -11,20 +11,16 @@ export
     Models,
     Game,
     Parameters,
-    Agent,
     GraphModel,
-    State, #should this be exported?
+    Agent,
+    State, #should this be exported? (NOTE: currently needs to be for other modules, fix this)
     AgentGraph, #should this be exported?
-    # StartingCondition,
-    # FractiousState,
-    # EquityState,
-    # RandomState,
-    # StoppingCondition,
-    # EquityPsychological,
-    # EquityBehavioral,
-    # PeriodCutoff,
 
     # accessors
+    displayname,
+
+
+    #old
     game,
     payoff_matrix,
     size,
@@ -234,7 +230,11 @@ import .Simulate: simulate, count_strategy
 
 
 function __init__()
-    configure()
+    if haskey(ENV, "TEST_INTERACTIONS") && parse(Bool, ENV["TEST_INTERACTIONS"]) #if testing, use the test config
+        @suppress configure("./config/test_config.toml")
+    else
+        configure()
+    end
 end
 
 end #Interactions

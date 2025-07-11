@@ -17,6 +17,22 @@ volume(vec::Vector...) = prod([length(v) for v in vec])
 fieldvals(instance::T) where {T} = [getfield(instance, val) for val in fieldnames(T)]
 
 
+"""
+    @suppress f
+
+Suppress any print statements inside a function.
+"""
+macro suppress(f)
+    esc(quote
+        so = stdout
+        redirect_stdout(devnull)
+        $(f)
+        redirect_stdout(so)
+    end)
+end
+
+
+
 # function kwargs(m::Method)
 #     argnames = ccall(:jl_uncompress_argnames, Vector{Symbol}, (Any,), m.slot_syms)
 #     isempty(argnames) && return argnames

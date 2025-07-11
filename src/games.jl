@@ -5,7 +5,7 @@ const PayoffMatrix{S1, S2, L} = SMatrix{S1, S2, Tuple{Int, Int}, L} #NOTE: try t
 
 Basic Game type with row dimension S1, column dimension S2, and length L=S1*S2.
 """
-struct Game{S1, S2, L}
+struct Game{S1, S2, L} #NOTE: ensure symmetric?? Make multiple types of games. Also need to update simulation engine to do more than symmetric games
     name::String
     payoff_matrix::PayoffMatrix{S1, S2, L}
 
