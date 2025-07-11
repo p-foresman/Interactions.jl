@@ -55,6 +55,8 @@ db_query(::Nothing, ::QueryParams) = NoDatabaseError()
 
 #db_query(qp::Query_simulations; ensure_samples::Bool=false) = db_query(Interactions.DATABASE(), qp; ensure_samples=ensure_samples)
 
+db_query_timeseries(simulation_uuid::String, limit::Int) = db_query_timeseries(Interactions.DATABASE(), simulation_uuid, limit)
+
 # db_begin_transaction() = db_begin_transaction(Interactions.SETTINGS.database)
 # db_close(db::SQLiteDB) = SQLite.close(db)
 # db_commit_transaction(db::SQLiteDB) = SQLite.commit(db)

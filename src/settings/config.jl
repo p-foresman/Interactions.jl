@@ -1,4 +1,4 @@
-using TOML
+using Distributed, TOML
 
 const project_dirpath() = dirname(Base.active_project()) #these must be functions so they don't store the paths where Interactions is precompiled
 const default_toml_path() = joinpath(@__DIR__, "default_config.toml")
@@ -26,7 +26,7 @@ const user_toml_path() = joinpath(project_dirpath(), "Interactions.toml")
 
 
 struct Settings
-    data::Dict{String, Any} #Base.ImmutableDict #contains the whole parsed .toml config
+    # data::Dict{String, Any} #Base.ImmutableDict #contains the whole parsed .toml config (dont really need)
     use_seed::Bool
     random_seed::Int
     # use_distributed::Bool
@@ -164,7 +164,7 @@ function Settings(settings::Dict{String, Any})
         # end
     end
 
-    return Settings(settings, use_seed, random_seed, procs, timeout, timeout_exit_code, database, figure_dirpath)
+    return Settings(use_seed, random_seed, procs, timeout, timeout_exit_code, database, figure_dirpath) # settings, 
 end
 
 function Settings(toml_path::String)

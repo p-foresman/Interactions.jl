@@ -561,7 +561,6 @@ function sql_query_timeseries(simulation_uuid::String, limit::Int)
     """
 end
 
-db_query_timeseries(simulation_uuid::String, limit::Int) = db_query_timeseries(Interactions.DATABASE(), simulation_uuid, limit)
 db_query_timeseries(db_info::SQLiteInfo, simulation_uuid::String, limit::Int) = db_query(db_info, sql_query_timeseries(simulation_uuid, limit))
 db_query_timeseries(db_info::Vector{SQLiteInfo}, simulation_uuid::String, limit::Int) = db_query(db_info, sql_query_timeseries(simulation_uuid, limit))
 db_query_timeseries(db_info::DatabaseSettings{SQLiteInfo}, simulation_uuid::String, limit::Int) = db_query(db_info, sql_query_timeseries(simulation_uuid, limit))

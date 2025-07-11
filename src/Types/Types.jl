@@ -6,6 +6,54 @@ Module containg the core data structures for the Interactions.jl package
 module Types
 
 export
+    #Game stuff
+    PayoffMatrix,
+    Game,
+    displayname, #multi-use
+    payoff_matrix,
+    strategies,
+    random_strategy
+
+    #Agent stuff
+
+using
+    # ..Interactions,
+    Random,
+    # DataFrames,
+    # SQLite,
+    # LibPQ,
+    StaticArrays,
+    Distributed,
+    DataStructures,
+    JSON3,
+    # Memoize,
+    InteractiveUtils,
+    TimerOutputs, #NOTE: get rid of this
+    Suppressor, #NOTE: get rid of this? (used in config i guess),
+    ParallelDataTransfer
+    
+
+import
+    ..GraphsExt,
+    ..Registry
+    
+
+include("games.jl")
+include("parameters.jl")
+include("interactionmodels.jl")
+include("agents.jl")
+include("agentgraph.jl")
+include("preallocatedarrays.jl")
+include("model.jl")
+include("state.jl")
+
+end #Types
+
+
+
+#NOTE: remove when ready
+"""
+export
     # types
     Model,
     Models,
@@ -87,36 +135,4 @@ export
     # reset_model!,
     # regenerate_model,
 
-
-using
-    # ..Interactions,
-    Random,
-    # DataFrames,
-    # SQLite,
-    # LibPQ,
-    StaticArrays,
-    Distributed,
-    DataStructures,
-    JSON3,
-    # Memoize,
-    InteractiveUtils,
-    TimerOutputs, #NOTE: get rid of this
-    Suppressor, #NOTE: get rid of this? (used in config i guess),
-    ParallelDataTransfer
-    
-
-import
-    ..GraphsExt,
-    ..Registry
-    
-
-include("games.jl")
-include("parameters.jl")
-include("interactionmodels.jl")
-include("agents.jl")
-include("agentgraph.jl")
-include("preallocatedarrays.jl")
-include("model.jl")
-include("state.jl")
-
-end #Types
+"""

@@ -5,7 +5,8 @@ Internal module in which various user-created functions are defined. Maintains t
 """
 module Registry
 
-export @graphmodel, @startingcondition, @stoppingcondition
+# export @graphmodel, @startingcondition, @stoppingcondition
+
 using ..Interactions, Distributed, ParallelDataTransfer, Graphs
 
 """

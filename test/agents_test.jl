@@ -4,7 +4,7 @@ using Interactions
 @testset "Game Tests" begin
 
     
-    a = Interactions.Agent("name")
+    a = Interactions.Types.Agent("name")
 
     @testset "Accessors" begin
         @test displayname(a) == "name"
