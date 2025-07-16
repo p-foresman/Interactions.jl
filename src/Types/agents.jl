@@ -13,26 +13,17 @@ const TaggedPerceptSequence = Vector{TaggedPercept}
 Basic Agent type. Agents are nodes of the AgentGraph and are players in games.
 """
 mutable struct Agent
-    name::String
+    id::Int
     is_hermit::Bool
     memory::PerceptSequence
     rational_choice::Choice
     choice::Choice
 
-    function Agent(name::String, is_hermit::Bool, memory::PerceptSequence, rational_choice::Choice, choice::Choice) #initialize choice at 0 (representing no choice)
-        return new(name, is_hermit, memory, rational_choice, choice)
+    function Agent(id::Int, is_hermit::Bool, memory::Vector{<:Integer}, rational_choice::Integer, choice::Integer) #NOTE: do i need this method? (currently required for structtypes)
+        return new(id, is_hermit, memory, rational_choice, choice)
     end
-    function Agent(name::String, memory::PerceptSequence, rational_choice::Choice, choice::Choice) #initialize choice at 0 (representing no choice)
-        return new(name, false, memory, rational_choice, choice)
-    end
-    function Agent(name::String, is_hermit::Bool)
-        return new(name, is_hermit, PerceptSequence([]), Choice(0), Choice(0))
-    end
-    function Agent(name::String)
-        return new(name, false, PerceptSequence([]), Choice(0), Choice(0))
-    end
-    function Agent()
-        return new("", false, PerceptSequence([]), Choice(0), Choice(0))
+    function Agent(;id::Int=0, is_hermit::Bool=false, memory::Vector{<:Integer}=PerceptSequence([]), rational_choice::Integer=Choice(0), choice::Integer=Choice(0))
+        return new(id, is_hermit, memory, rational_choice, choice)
     end
 end
 
@@ -42,11 +33,18 @@ end
 ##########################################
 
 """
+    id(agent::Agent)
+
+Get the id of an agent.
+"""
+id(agent::Agent) = getfield(agent, :id)
+
+"""
     displayname(agent::Agent)
 
-Get the name/identifier of an agent.
+Get the id/identifier of an agent.
 """
-displayname(agent::Agent) = getfield(agent, :name)
+displayname(agent::Agent) = string(getfield(agent, :id)) #NOTE: is this unnecessary?
 
 """
     ishermit(agent::Agent)
@@ -68,6 +66,13 @@ ishermit!(agent::Agent, is_hermit::Bool) = setfield!(agent, :is_hermit, is_hermi
 Get the current memory of an agent.
 """
 memory(agent::Agent) = getfield(agent, :memory)
+
+"""
+    memory_length(agent::Agent)
+
+Get the memory length of an agent.
+"""
+memory_length(agent::Agent) = length(memory(agent))
 
 """
     rational_choice(agent::Agent)
@@ -97,29 +102,3 @@ choice(agent::Agent) = getfield(agent, :choice)
 Set an agent's choice.
 """
 choice!(agent::Agent, choice::Integer) = setfield!(agent, :choice, Choice(choice))
-
-
-# mutable struct TaggedAgent #could make a TaggedAgent as well to separate tags
-#     name::String
-#     tag::Union{Symbol} #NOTE: REMOVE
-#     is_hermit::Bool
-#     wealth::Int #is this necessary? #NOTE: REMOVE
-#     memory::PerceptSequence
-#     choice::Int8
-
-#     function Agent(name::String, wealth::Int, memory::Vector{Tuple{Symbol, Int8}}, tag::Union{Nothing, Symbol} = nothing, choice::Int8 = Int8(0)) #initialize choice at 0 (representing no choice)
-#         return new(name, tag, false, wealth, memory, choice)
-#     end
-#     function Agent(name::String, tag::Union{Nothing, Symbol} = nothing)
-#         return new(name, tag, false, 0, Vector{Tuple{Symbol, Int8}}([]), Int8(0))
-#     end
-#     function Agent(name::String, is_hermit::Bool)
-#         return new(name, nothing, is_hermit, 0, Vector{Tuple{Symbol, Int8}}([]), Int8(0))
-#     end
-#     function Agent(name::String)
-#         return new(name, nothing, false, 0, Vector{Tuple{Symbol, Int8}}([]), Int8(0))
-#     end
-#     function Agent()
-#         return new("", nothing, false, 0, Vector{Tuple{Symbol, Int8}}([]), Int8(0))
-#     end
-# end

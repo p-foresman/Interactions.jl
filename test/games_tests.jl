@@ -2,6 +2,9 @@ using Test
 using Interactions, Random
 
 @testset "Game Tests" begin
+    @test fieldnames(Interactions.Types.Game) == (:name, :payoff_matrix)
+    @test fieldtypes(Interactions.Types.Game) == (String, Interactions.PayoffMatrix)
+
     pm = [(0, 0) (0, 0) (70, 30);
           (0, 0) (50, 50) (50, 30);
           (30, 70) (30, 50) (30, 30)]

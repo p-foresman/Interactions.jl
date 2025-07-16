@@ -53,12 +53,12 @@ struct AgentGraph{N, E, C} <: GraphsExt.AbstractGraph{Int}
     function AgentGraph(graph::GraphsExt.Graph)
         N = GraphsExt.nv(graph)
         E = GraphsExt.ne(graph)
-        agents::AgentSet{N} = [Agent("Agent $agent_number") for agent_number in 1:N]
-        for vertex in 1:N #could make graph-type specific multiple dispatch so this only needs to happen for ER and SBM (otherwise num_hermits=0)
-            if iszero(GraphsExt.degree(graph, vertex))
-                ishermit!(agents[vertex], true)
-            end
-        end
+        agents::AgentSet{N} = [Agent(name="$agent_number", is_hermit=iszero(GraphsExt.degree(graph, agent_number))) for agent_number in 1:N]
+        # for vertex in 1:N #could make graph-type specific multiple dispatch so this only needs to happen for ER and SBM (otherwise num_hermits=0)
+        #     if iszero(GraphsExt.degree(graph, vertex))
+        #         ishermit!(agents[vertex], true)
+        #     end
+        # end
         vertex_sets, edge_sets, C = GraphsExt.connected_component_sets(graph)
         components = []
         for component_number in 1:C
