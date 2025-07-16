@@ -119,7 +119,7 @@ function calculate_expected_utilities!(state::Types.State)
 end
 
 
-function make_choices!(state::Types.State)
+function make_choices!(state::Types.State) #NOTE: this might have to be defined by users for true generality
     for player_number in 1:2 #eachindex(model.pre_allocated_arrays.players)
         Types.rational_choice!(Types.players(state, player_number), maximum_strategy(Types.expected_utilities(state, player_number)))
         Types.choice!(Types.players(state, player_number), rand() < Types.error_rate(state.model) ? Types.random_strategy(state.model, player_number) : Types.rational_choice(Types.players(state, player_number)))

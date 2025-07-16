@@ -12,7 +12,7 @@ export
     displayname, #multi-use
     payoff_matrix,
     strategies,
-    random_strategy
+    random_strategy,
 
     #Agent stuff
 

@@ -6,8 +6,8 @@ const UserVariables = Dict{Symbol, Any}
 Type to define and store simulation parameters.
 """
 struct Parameters #NOTE: allow user to define the matches_per_period (default 1?)
-    number_agents::Int #switch to 'population'
-    memory_length::Int
+    number_agents::Int #switch to 'population_size'
+    memory_length::Int #NOTE: this is specific to our model. Need to make Parameters and everything else more general. This package should simply be used to put agents on graphs and have them play games. Different agents can have different decision heuristics!
     error::Float64
     # matches_per_period::Function #allow users to define their own matches per period as a function of other parameters?
     starting_condition_fn_name::String
@@ -16,7 +16,7 @@ struct Parameters #NOTE: allow user to define the matches_per_period (default 1?
     # random_seed::Int #probably don't need a random seed in every Parameters struct?
 
 
-    function Parameters(number_agents::Int, memory_length::Int, error::Float64, starting_condition_fn_name::String, stopping_condition_fn_name::String; user_variables::UserVariables=UserVariables())
+    function Parameters(number_agents::Integer, memory_length::Integer, error::Float64, starting_condition_fn_name::String, stopping_condition_fn_name::String; user_variables::UserVariables=UserVariables())
         @assert number_agents >= 2 "'population' must be >= 2"
         @assert memory_length >= 1 "'memory_length' must be positive"
         @assert 0.0 <= error <= 1.0 "'error' must be between 0.0 and 1.0"
@@ -24,10 +24,10 @@ struct Parameters #NOTE: allow user to define the matches_per_period (default 1?
         @assert isdefined(Registry.StoppingConditions, Symbol(stopping_condition_fn_name)) "'stopping_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @stoppingcondition macro before function to register it"
         return new(number_agents, memory_length, error, starting_condition_fn_name, stopping_condition_fn_name, user_variables)
     end
-    function Parameters()
-        return new()
-    end
-    function Parameters(number_agents::Int, memory_length::Int, error::Float64, starting_condition_fn_name::String, stopping_condition_fn_name::String, user_variables::UserVariables)
+    # function Parameters()
+    #     return new()
+    # end
+    function Parameters(number_agents::Integer, memory_length::Integer, error::Float64, starting_condition_fn_name::String, stopping_condition_fn_name::String, user_variables::UserVariables)
         @assert number_agents >= 2 "'population' must be >= 2"
         @assert memory_length >= 1 "'memory_length' must be positive"
         @assert 0.0 <= error <= 1.0 "'error' must be between 0.0 and 1.0"
