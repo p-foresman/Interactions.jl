@@ -5,14 +5,14 @@ const TaggedPercept = Tuple{Symbol, Int8}
 const TaggedPerceptSequence = Vector{TaggedPercept}
 
 
-# abstract type Agent end
+abstract type AbstractAgent end
 
 """
     Agent
 
 Basic Agent type. Agents are nodes of the AgentGraph and are players in games.
 """
-mutable struct Agent
+mutable struct Agent <: AbstractAgent
     id::Int
     is_hermit::Bool
     memory::PerceptSequence

@@ -39,7 +39,7 @@ import
     
 
 include("games.jl")
-include("parameters.jl")
+# include("parameters.jl")
 include("interactionmodels.jl")
 include("agents.jl")
 include("agentgraph.jl")

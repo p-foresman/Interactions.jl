@@ -65,10 +65,11 @@ Get the string used for displaying a GraphModel instance.
 displayname(graphmodel::GraphModel) = "$(fn_name(graphmodel))$(isempty(params(graphmodel)) ? "" : " $(params(graphmodel))")"
 Base.show(graphmodel::GraphModel) = println(displayname(graphmodel))
 
-function generate_graph(graphmodel::GraphModel, parameters::Parameters)::GraphsExt.Graphs.SimpleGraph
-    graph::GraphsExt.Graphs.SimpleGraph = fn(graphmodel)(parameters, args(graphmodel)...; kwargs(graphmodel)...)
-    if GraphsExt.ne(graph) == 0 #NOTE: we aren't considering graphs with no edges (obviously). Does it even make sense to consider graphs with more than one component?
-        return generate_graph(graphmodel, parameters)
-    end
-    return graph
-end
+#NOTE: probably do want this here, but want it to be self contained to GraphModel?
+# function generate_graph(graphmodel::GraphModel, parameters::Parameters)::GraphsExt.Graphs.SimpleGraph
+#     graph::GraphsExt.Graphs.SimpleGraph = fn(graphmodel)(parameters, args(graphmodel)...; kwargs(graphmodel)...)
+#     if GraphsExt.ne(graph) == 0 #NOTE: we aren't considering graphs with no edges (obviously). Does it even make sense to consider graphs with more than one component?
+#         return generate_graph(graphmodel, parameters)
+#     end
+#     return graph
+# end
