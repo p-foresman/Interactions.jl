@@ -1,4 +1,5 @@
-Parameters = Dict{Symbol, Any}
+const Parameters = Dict{Symbol, Any} #NamedTuple #NOTE: should i just remove these? Probably makes things more confusing for user
+const Variables = Dict{Symbol, Any}
 
 """
     Model{S1, S2, V, E}
@@ -11,26 +12,30 @@ S2 = column dimension of Game instance
 V = number of agents/vertices
 E = number of relationships/edges
 """
-struct Model{S1, S2} #, GM <: GraphModel}
+struct Model{S1, S2, A<:AbstractAgent} #, GM <: GraphModel}
     # id::Union{Nothing, Int}
-    # agent_type::Type{<:AbstractAgent}
-    population::Tuple{Type{<:AbstractAgent}, Int} # (agent_type, population_size) --- sticking with one agent type for now, in the future could store a vector of population tuples which describe the population makeup
+    agent_type::Type{A}
+    population_size::Int
+    # population::Tuple{Type{A}, Int} # (agent_type, population_size) --- sticking with one agent type for now, in the future could store a vector of population tuples which describe the population makeup
+    # population::Dict{DataType, Int} #NOTE: could do this for heterogeneous population!
     game::Game{S1, S2}
     graphmodel::GraphModel #NOTE: make this a concrete type for better performance? (tried and didnt help)
     starting_condition_fn_name::String
     stopping_condition_fn_name::String
-    parameters::Parameters
+    parameters::Parameters #the parameters used in the model (immutable dictionary - these parameters cannot be changed during the course of a simulation)
+    variables::Variables #the variables used in the model (these variables can be altered during the course of a simulation)
     #graph::Union{Nothing, GraphsExt.Graph} #pass graph in here to be passed to state. if no graph is passed, it's generated when state is initialized
 
-    function Model(population::Tuple{Type{<:AbstractAgent}, Int}, game::Game{S1, S2}, graphmodel::GraphModel, starting_condition_fn_name::String, stopping_condition_fn_name::String, params::Parameters=Parameters()) where {S1, S2}
+    # function Model(population::Tuple{Type{A}, Int}, game::Game{S1, S2}, graphmodel::GraphModel, starting_condition_fn_name::String, stopping_condition_fn_name::String; parameters::Parameters=Parameters(), variables::Variables=Variables()) where {A<:AbstractAgent, S1, S2}
+    #     @assert isdefined(Registry.StartingConditions, Symbol(starting_condition_fn_name)) "'starting_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @startingcondition macro before function to register it"
+    #     @assert isdefined(Registry.StoppingConditions, Symbol(stopping_condition_fn_name)) "'stopping_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @stoppingcondition macro before function to register it"
+    #     return new{S1, S2, A}(population, game, graphmodel, starting_condition_fn_name, stopping_condition_fn_name, parameters, variables)
+    # end
+    function Model(agent_type::Type{A}, population_size::Integer, game::Game{S1, S2}, graphmodel::GraphModel, starting_condition_fn_name::String, stopping_condition_fn_name::String; parameters::Parameters=Parameters(), variables::Variables=Variables()) where {A<:AbstractAgent, S1, S2}
         @assert isdefined(Registry.StartingConditions, Symbol(starting_condition_fn_name)) "'starting_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @startingcondition macro before function to register it"
         @assert isdefined(Registry.StoppingConditions, Symbol(stopping_condition_fn_name)) "'stopping_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @stoppingcondition macro before function to register it"
-        return new{S1, S2}(population, game, graphmodel, starting_condition_fn_name, stopping_condition_fn_name, params)
-    end
-    function Model(agent_type::Type{<:AbstractAgent}, population_size::Integer, game::Game{S1, S2}, graphmodel::GraphModel, starting_condition_fn_name::String, stopping_condition_fn_name::String, params::Parameters=Parameters()) where {S1, S2}
-        @assert isdefined(Registry.StartingConditions, Symbol(starting_condition_fn_name)) "'starting_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @startingcondition macro before function to register it"
-        @assert isdefined(Registry.StoppingConditions, Symbol(stopping_condition_fn_name)) "'stopping_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @stoppingcondition macro before function to register it"
-        return new{S1, S2}((agent_type, Int(population_size)), game, graphmodel, starting_condition_fn_name, stopping_condition_fn_name, params)
+        # population::Tuple{Type{A}, Int} = (agent_type, Int(population_size))
+        return new{S1, S2, A}(agent_type, population_size, game, graphmodel, starting_condition_fn_name, stopping_condition_fn_name, parameters, variables)
     end
     # function Model(game::Game{S1, S2}, params::Parameters, graphmodel::GraphModel, graph::GraphsExt.Graph) where {S1, S2}
     #     return new{S1, S2}(game, params, graphmodel, graph) #this constructor allows a graph to be fed in
@@ -62,26 +67,26 @@ end
 # """
 # agent_type(model::Model) = get_field(model, :agent_type)
 
-"""
-    population(model::Model)
+# """
+#     population(model::Model)
 
-Get the population description used in the model.
-"""
-population(model::Model) = getfield(model, :population)
+# Get the population description used in the model.
+# """
+# population(model::Model) = getfield(model, :population)
 
 """
     agent_type(model::Model)
 
 Get the agent type (<:AbstractAgent) used in the model.
 """
-agent_type(model::Model) = population(model)[1]
+agent_type(model::Model) = getfield(model, :agent_type)
 
 """
     population_size(model::Model)
 
 Get the population size used in the model.
 """
-population_size(model::Model) = population(model)[2]
+population_size(model::Model) = get_field(model, :population_size)
 
 
 #Game
@@ -151,16 +156,16 @@ function generate_graph(model::Model)::GraphsExt.Graphs.SimpleGraph
     return graph
 end
 
-"""
-    AgentGraph(model::Model)
+# """
+#     AgentGraph(model::Model)
 
-Initialize an AgentGraph from a model
-"""
-function AgentGraph(model::Model)
-    ag = AgentGraph(generate_graph(graphmodel(model), parameters(model)))
-    starting_condition_fn_call(model, ag) #get the user-defined starting condition function and use it to initialize the AgentGraph instance
-    return ag
-end
+# Initialize an AgentGraph from a model
+# """
+# function AgentGraph(model::Model)
+#     ag = AgentGraph(generate_graph(model), agent_type(model))
+#     # starting_condition_fn_call(model, ag) #get the user-defined starting condition function and use it to initialize the AgentGraph instance
+#     return ag
+# end
 
 
 """
@@ -177,12 +182,12 @@ Get the user-defined starting condition function which correlates to the String 
 """
 starting_condition_fn(model::Model) = getfield(Registry.StartingConditions, Symbol(starting_condition_fn_name(model)))
 
-"""
-    starting_condition_fn_call(model::Model, agentgraph::AgentGraph)
+# """ # moved to State
+#     starting_condition_fn_call(model::Model, agentgraph::AgentGraph)
 
-Call the user-defined starting condition function which correlates to the String stored in the 'starting_condition_fn_str' Parameters field.
-"""
-starting_condition_fn_call(model::Model, agentgraph::AgentGraph) = starting_condition_fn(model)(model, agentgraph)
+# Call the user-defined starting condition function which correlates to the String stored in the 'starting_condition_fn_str' Parameters field.
+# """
+# starting_condition_fn_call(model::Model, agentgraph::AgentGraph) = starting_condition_fn(model)(model, agentgraph)
 
 
 """
@@ -215,6 +220,33 @@ get_enclosed_stopping_condition_fn(model::Model) = stopping_condition_fn(model)(
 Get the Parameters instance in the model.
 """
 parameters(model::Model) = getfield(model, :parameters)
+
+"""
+    parameters(model::Model, param::Symbol)
+
+Get the value of the parameter given.
+"""
+parameters(model::Model, param::Symbol) = getindex(parameters(model), param)
+
+# Variables
+"""
+    variables(model::Model)
+
+Get the Parameters instance in the model.
+"""
+variables(model::Model) = getfield(model, :variables)
+
+"""
+    variables(model::Model, variable::Symbol)
+
+Get the value of the parameter given.
+"""
+variables(model::Model, variable::Symbol) = getindex(variables(model), variable)
+
+function variables!(model::Model, variable::Symbol, value)
+    @assert value isa typeof(variables(model, variable)) "Tried to update the variable '$variable' with a different type than what it was assigned. Must be $(typeof(value))"
+    setindex!(variables(model), variable, value)
+end
 
 
 

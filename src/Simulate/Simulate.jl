@@ -25,7 +25,7 @@ include("producers.jl")
 
 Run a simulation using the model provided.
 """
-simulate(model::Types.Model; kwargs...) = simulate_supervisor(model, Interactions.DATABASE(); kwargs..., start_time=time()) #start_time last to overwrite user-given start_time
+simulate(model::Types.Model; kwargs...) = simulate_supervisor(model; kwargs..., start_time=time()) #start_time last to overwrite user-given start_time
 
 """
     simulate(model_id::Int; db_group_id::Union{Nothing, Integer} = nothing)
@@ -37,23 +37,23 @@ Note: a database must be configured to use this method and a model with the give
 function simulate(model_id::Integer; kwargs...)
     Database.assert_db()
     model = Database.db_reconstruct_model(model_id) #construct model associated with id
-    return simulate_supervisor(model, Interactions.DATABASE(); kwargs..., start_time=time())
+    return simulate_supervisor(model; kwargs..., start_time=time())
 end
 
 function simulate(model::Types.Model, model_id::Int; kwargs...) #NOTE: potentially dangerous method that could screw up database integrity
     @assert !isnothing(Interactions.DATABASE()) Database.NoDatabaseError()
     Database.db_insert_model(model; model_id=model_id)
-    return simulate_supervisor(model, Interactions.DATABASE(); kwargs..., start_time=time())
+    return simulate_supervisor(model; kwargs..., start_time=time())
 end
 
-simulate(generator::Generators.ModelGenerator; kwargs...) = simulate_supervisor(generator, Interactions.DATABASE(); kwargs..., start_time=time())
+simulate(generator::Generators.ModelGenerator; kwargs...) = simulate_supervisor(generator; kwargs..., start_time=time())
 
-simulate(generator::Generators.ModelGeneratorSet; kwargs...) = simulate_supervisor(generator, Interactions.DATABASE(); kwargs..., start_time=time())
+simulate(generator::Generators.ModelGeneratorSet; kwargs...) = simulate_supervisor(generator; kwargs..., start_time=time())
 
 function simulate(simulation_uuid::String; kwargs...)
     Database.assert_db()
     model_state::Tuple{Types.Model, Types.State} = Database.db_reconstruct_simulation(simulation_uuid) #NOTE: model needs to be consumed by state!
-    return simulate_supervisor(model_state, Interactions.DATABASE(); kwargs..., start_time=time())
+    return simulate_supervisor(model_state; kwargs..., start_time=time())
 end
 
 function simulate(;kwargs...) #NOTE: probably don't want this method for simulation continuation
@@ -65,24 +65,25 @@ function simulate(;kwargs...) #NOTE: probably don't want this method for simulat
         push!(model_state_tuples, Database.db_reconstruct_simulation(simulation_uuid))
     end
 
-    return simulate_supervisor(model_state_tuples, Interactions.DATABASE(); kwargs..., start_time=time())
+    return simulate_supervisor(model_state_tuples; kwargs..., start_time=time())
 end
 
 
-
-function simulate_supervisor(recipe::Union{Types.Model, Generators.ModelGenerator, Generators.ModelGeneratorSet, Vector{Types.State}}, db_info::Database.DatabaseSettings; start_time::Float64, samples::Integer=1, db_group_id::Union{Integer, Nothing} = nothing)
+function simulate_supervisor(recipe::Union{Types.Model, Generators.ModelGenerator, Generators.ModelGeneratorSet, Vector{Types.State}}; start_time::Float64, samples::Integer=1, db_group_id::Union{Integer, Nothing} = nothing)
     timeout = Interactions.SETTINGS.timeout
-    db_push_period = db_info.push_period
     
     producer, total_jobs = get_producer(recipe, samples)
 
     jobs = RemoteChannel(()->Channel{Types.State}(producer))
     results = RemoteChannel(()->Channel{Types.State}(nworkers()))
-
+    println("aaaaaaaaa")
+    println(recipe)
+    println(total_jobs)
     for worker in workers() #run a _simulate process on each worker
-        remote_do(simulate_worker, worker, jobs, results, start_time, timeout, db_push_period)
+        remote_do(simulate_worker, worker, jobs, results, start_time, timeout, Interactions.SETTINGS.capture_interval)
+        println(worker)
     end
-
+    println("cccccccc")
     num_received = 0
     num_completed = 0
     while num_received < total_jobs
@@ -111,31 +112,31 @@ function simulate_supervisor(recipe::Union{Types.Model, Generators.ModelGenerato
 end
 
 
-function simulate_worker(jobs::RemoteChannel{Channel{Types.State}}, results::RemoteChannel{Channel{Types.State}}; start_time::Float64, timeout::Union{Int, Nothing}=nothing, db_push_period::Union{Int, Nothing}=nothing)
-
+function simulate_worker(jobs::RemoteChannel{Channel{Types.State}}, results::RemoteChannel{Channel{Types.State}}; start_time::Float64, timeout::Union{Int, Nothing}=nothing, capture_interval::Union{Int, Nothing}=nothing)
     local state::Types.State
-    while true
-        try
-            state = take!(jobs)
-        catch e
-            if e.captured.ex isa InvalidStateException #channel is closed, break out of loop and return function
-                break
-            else
-                throw(e)
-            end 
-        else
-            stopping_condition_reached = Types.get_enclosed_stopping_condition_fn(state.model)
-            Types.restore_rng_state(state)
+    println("Bbbbbbbbbb")
+    # while true
+    #     try
+    #         state = take!(jobs)
+    #     catch e
+    #         if e.captured.ex isa InvalidStateException #channel is closed, break out of loop and return function
+    #             break
+    #         else
+    #             throw(e)
+    #         end 
+    #     else
+    #         stopping_condition_reached = Types.get_enclosed_stopping_condition_fn(state.model)
+    #         Types.restore_rng_state(state)
 
-            simulate!(state, timeout, db_push_period; stopping_condition_reached=stopping_condition_reached, start_time=start_time)
+    #         simulate!(state, timeout, capture_interval; stopping_condition_reached=stopping_condition_reached, start_time=start_time)
 
-            if Types.iscomplete(state) || Types.istimedout(state)
-                println(" --> periods elapsed: $(Types.period(state))")
-                flush(stdout)
-            end
-            put!(results, state)
-        end
-    end
+    #         if Types.iscomplete(state) || Types.istimedout(state)
+    #             println(" --> periods elapsed: $(Types.period(state))")
+    #             flush(stdout)
+    #         end
+    #         put!(results, state)
+    #     end
+    # end
     return nothing
 end
 

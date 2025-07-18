@@ -1,36 +1,60 @@
+#NOTE: Should I separate the database stuff into an inner type? (model_id, prev_simulation_uuid, rng_state_str)
 
-mutable struct State{V, E, C}
-    const model::Model
-    const agentgraph::AgentGraph{V, E, C}
-    const preallocatedarrays::PreAllocatedArrays #NOTE: PreAllocatedArrays currently 2 players only
+mutable struct StateMutables
     period::Int128 #NOTE: should this be added? if so, must make struct mutable and add const before agentgraph and preallocatedarrays
     complete::Bool
-    const user_variables::UserVariables #allows for extra state variables if the user needs them
-    const model_id::Union{Int, Nothing}
-    prev_simulation_uuid::Union{String, Nothing} #needs to be updated when pushing to db periodically
-    const random_seed::Union{Int, Nothing}
-    rng_state_str::Union{String, Nothing} #NOTE: change to Xoshiro down the line? Updated before being pushed to db
     timedout::Bool # used to determine whether a periodic push or a full exit is necessary
+    prev_simulation_uuid::Union{String, Nothing} #needs to be updated when pushing to db periodically
+    rng_state_str::Union{String, Nothing} #NOTE: change to Xoshiro down the line? Updated before being pushed to db
 
-
-    #NOTE: clean up these constructors!!
-    function State(model::Model; user_variables::UserVariables=UserVariables(), model_id::Union{Int, Nothing}=nothing, random_seed::Union{Int, Nothing}=nothing) #NOTE: probably dont need user_variables in this constructor
-        agentgraph::AgentGraph = AgentGraph(model)
-        V = num_vertices(agentgraph)
-        E = num_edges(agentgraph)
-        C = num_components(agentgraph)
-        preallocatedarrays::PreAllocatedArrays = PreAllocatedArrays(model)
-
-        all_user_variables = merge(Interactions.user_variables(parameters(model)), user_variables) #user_variables defined here should go last so that values overwrite defaults if applicable!
-        # is_stopping_condition_test = parameters(model).stoppingcondition(model)
-        return new{V, E, C}(model, agentgraph, preallocatedarrays, Int128(0), false, all_user_variables, model_id, nothing, random_seed, nothing, false)
-    end
-    # function State(model::Model, agentgraph::AgentGraph{V, E, C}, period::Integer, complete::Bool, user_variables::UserVariables, model_id::Int, prev_simulation_uuid::String, random_seed::Union{Int, Nothing}, rng_state_str::String) where {V, E, C}
-    #     preallocatedarrays::PreAllocatedArrays = PreAllocatedArrays(model)
-    #     all_user_variables = merge(Interactions.user_variables(parameters(model)), user_variables) #user_variables defined here should go last so that values overwrite defaults if applicable!
-    #     return new{V, E, C}(model, agentgraph, preallocatedarrays, period, complete, all_user_variables, model_id, prev_simulation_uuid, random_seed, rng_state_str, false)
-    # end
+    StateMutables() = new(Int128(0), false, false, nothing, nothing)
 end
+
+struct State{V, E, C}
+    model::Model # {S1, S2}
+    agentgraph::AgentGraph{V, E, C}
+    preallocatedarrays::PreAllocatedArrays #NOTE: PreAllocatedArrays currently 2 players only
+    model_id::Union{Int, Nothing}
+    random_seed::Union{Int, Nothing}
+    mutables::StateMutables
+end
+
+"""
+    BlankState(model::Model, model_id::Union{Int, Nothing}=nothing, random_seed::Union{Int, Nothing}=nothing)
+
+Generates an uninitialized State instance.
+"""
+function BlankState(model::Model; model_id::Union{Int, Nothing}=nothing, random_seed::Union{Int, Nothing}=nothing)
+    # agentgraph::AgentGraph = AgentGraph(model)
+    agentgraph::AgentGraph = AgentGraph(generate_graph(model), agent_type(model))
+    V = num_vertices(agentgraph)
+    E = num_edges(agentgraph)
+    C = num_components(agentgraph)
+    preallocatedarrays::PreAllocatedArrays = PreAllocatedArrays(model)
+
+    # all_user_variables = merge(Interactions.user_variables(parameters(model)), user_variables) #user_variables defined here should go last so that values overwrite defaults if applicable!
+    # is_stopping_condition_test = parameters(model).stoppingcondition(model)
+    return State{V, E, C}(model, agentgraph, preallocatedarrays, model_id, random_seed, StateMutables())
+end
+
+"""
+    State(model::Model; model_id::Union{Int, Nothing}=nothing, random_seed::Union{Int, Nothing}=nothing)
+
+Generates a State instance that gets initialized with a user-supplied starting condition function.
+"""
+function State(model::Model; kwargs...)
+    state = BlankState(model; kwargs...)
+    starting_condition_fn_call(state)
+    return state
+end
+
+"""
+    starting_condition_fn_call(state::State)
+
+Call the user-defined starting condition function which correlates to the String stored in the 'starting_condition_fn_str' Model field.
+"""
+starting_condition_fn_call(state::State) = starting_condition_fn(model(state))(state)
+
 
 
 """
@@ -45,42 +69,42 @@ model(state::State) = getfield(state, :model)
 
 Get the current period of the simulation.
 """
-period(state::State) = getfield(state, :period)
+period(state::State) = getfield(state.mutables, :period)
 
 """
     period!(state::State, value::Integer)
 
 Set the period of the simulation to value.
 """
-period!(state::State, value::Integer) = setfield!(state, :period, Int128(value))
+period!(state::State, value::Integer) = setfield!(state.mutables, :period, Int128(value))
 
 """
     increment_period!(state::State)
 
 Increment the period of the simulation.
 """
-increment_period!(state::State) = period!(state, period(state) + 1)
+increment_period!(state::State) = period!(state.mutables, period(state) + 1)
 
 """
     complete!(state::State)
 
 Mark the state as 'completed'
 """
-complete!(state::State) = setfield!(state, :complete, true)
+complete!(state::State) = setfield!(state.mutables, :complete, true)
 
 """
     iscomplete(state::State)
 
 Check if the state is 'completed'
 """
-iscomplete(state::State) = getfield(state, :complete)
+iscomplete(state::State) = getfield(state.mutables, :complete)
 
 
-timedout!(state::State) = setfield!(state, :timedout, true)
-istimedout(state::State) = getfield(state, :timedout)
+timedout!(state::State) = setfield!(state.mutables, :timedout, true)
+istimedout(state::State) = getfield(state.mutables, :timedout)
 
 # prev_simulation_uuid(state::State) = getfield(state, :prev_simulation_uuid)
-prev_simulation_uuid!(state::State, uuid::String) = setfield!(state, :prev_simulation_uuid, uuid)
+prev_simulation_uuid!(state::State, uuid::String) = setfield!(state.mutables, :prev_simulation_uuid, uuid)
 
 
 # AgentGraph
@@ -390,34 +414,70 @@ Reset the cached arrays in the model's PreAllocatedArrays instance to zeros.
 reset_arrays!(state::State) = reset_arrays!(preallocatedarrays(state))
 
 
-"""
-    user_variables(state::State)
 
-Get the extra user-defined State variables.
-"""
-user_variables(state::State) = getfield(state, :user_variables)
 
+# Parameters
 """
-    user_variables(state::State, variable::Symbol)
+    parameters(state::State)
 
-Get the value of the specified user-defined variable.
+Get the parameters in the model associated with the state.
 """
-user_variables(state::State, variable::Symbol) = user_variables(state)[variable]
+parameters(state::State) = parameters(model(state))
 
 """
-    set_user_variable!(state::State, variable::Symbol, value::)
+    parameters(state::State, param::Symbol)
 
-Get the extra user-defined State variables.
+Get the value of the parameter given.
 """
-function set_user_variable!(state::State, variable::Symbol, value::T) where {T}
-    @assert user_variables(state)[variable] isa T "Type of user variable must remain constant!"
-    user_variables(state)[variable] = value
-end
+parameters(state::State, param::Symbol) = parameters(model(state), param)
 
 
-rng_state_str(state::State) = getfield(state, :rng_state_str)
+# Variables
+"""
+    variables(state::State)
+
+Get the Parameters instance in the model.
+"""
+variables(state::State) = variables(model(state))
+
+"""
+    variables(state::State, variable::Symbol)
+
+Get the value of the parameter given.
+"""
+variables(state::State, variable::Symbol) = variables(model(state), variable)
+
+variables!(state::State, variable::Symbol, value) = variables!(model(state), variable, value)
+
+
+# """
+#     user_variables(state::State)
+
+# Get the extra user-defined State variables.
+# """
+# user_variables(state::State) = getfield(state, :user_variables)
+
+# """
+#     user_variables(state::State, variable::Symbol)
+
+# Get the value of the specified user-defined variable.
+# """
+# user_variables(state::State, variable::Symbol) = user_variables(state)[variable]
+
+# """
+#     set_user_variable!(state::State, variable::Symbol, value::)
+
+# Get the extra user-defined State variables.
+# """
+# function set_user_variable!(state::State, variable::Symbol, value::T) where {T}
+#     @assert user_variables(state)[variable] isa T "Type of user variable must remain constant!"
+#     user_variables(state)[variable] = value
+# end
+
+
+rng_state_str(state::State) = getfield(state.mutables, :rng_state_str)
 # rng_state(state::State) = JSON3.read(rng_state_str(state), Random.Xoshiro)
-rng_state!(state::State) = setfield!(state, :rng_state_str, JSON3.write(copy(Random.default_rng())))
+rng_state!(state::State) = setfield!(state.mutables, :rng_state_str, JSON3.write(copy(Random.default_rng())))
 # rng_state_str!(state::State, rng_state_str::String) =  setfield!(state, :rng_state_str, rng_state_str) #NOTE: dont want this method
 
 function restore_rng_state(state::State)

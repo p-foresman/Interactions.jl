@@ -23,15 +23,15 @@ struct GraphModel <: InteractionModel
         # @assert all(i -> isa(i, Real), values(args)) "All args must be <:Real" #NOTE: should we require this?
         f = getfield(Registry.GraphModels, Symbol(fn_name)) #get the function
         arg_types = map(arg->typeof(arg), collect(args))
-        m = which(f, (Parameters, arg_types...)) #get the method associated with the arg types provided. This will error if the arguments provided don't match the type specifications for the Function
-        param_types = Base.arg_decl_parts(m)[2][3:end] #first index is function name, second should be Parameters type
+        m = which(f, (Model, arg_types...)) #get the method associated with the arg types provided. This will error if the arguments provided don't match the type specifications for the Function
+        param_types = Base.arg_decl_parts(m)[2][3:end] #first index is function name, second should be Model type
         arg_names = keys(args)
         for i in eachindex(param_types) #ensure the orders of arguments are right. If these are right, args is sufficiently validated since type validation was completed previously
             @assert Symbol(param_types[i][1]) == arg_names[i] "arguments provided must be in the order of the function parameters"
         end
-        
-        @assert Base.return_types(f, (Parameters, arg_types...))[1] <: GraphsExt.Graphs.SimpleGraph "the fn provided must return a Graphs.SimpleGraph"
-
+        println(Base.return_types(f, (Model, arg_types...))[1])
+        @assert Base.return_types(f, (Model, arg_types...))[1] <: GraphsExt.Graphs.SimpleGraph "the fn provided must return a Graphs.SimpleGraph"
+        println(arg_types)
         return new(fn_name, args, Tuple(arg_types), kwargs) #(; zip(params , ordered_args)...)
     end
     GraphModel(fn_name::String; kwargs::Dict{Symbol, Any}=Dict{Symbol, Any}(), args...) = GraphModel(fn_name, NamedTuple(args), kwargs)

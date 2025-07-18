@@ -33,6 +33,7 @@ struct Settings
     procs::Int
     timeout::Union{Int, Nothing}
     timeout_exit_code::Int
+    capture_interval::Union{Int, Nothing}
     database::Union{Database.DatabaseSettings, Nothing} #if nothing, not using database
     # database::Union{Database.DBInfo, Nothing} #if nothing, not using database
     # push_period::Union{Int, Nothing}
@@ -98,6 +99,10 @@ function Settings(settings::Dict{String, Any})
     timeout_exit_code = settings["timeout_exit_code"]
     @assert timeout_exit_code isa Int && timeout_exit_code >= 0 "'timeout_exit_code' value must be a positive Int (>=1) OR 0 (denoting no exit)"
 
+    @assert haskey(settings, "capture_interval") "config file must have a 'capture_interval' positive integer variable (can be 0 for no periodic push)"
+    capture_interval = settings["capture_interval"]
+    @assert capture_interval isa Int && capture_interval >= 0 "'capture_interval' must be a positive Integer (can be 0 for no periodic push)"
+
     @assert haskey(settings, "figure_dirpath") "config file must have a 'figure_dirpath' variable"
     figure_dirpath = settings["figure_dirpath"]
     @assert figure_dirpath isa String "the 'figure_dirpath' variable must be a String (empty string for project root)"
@@ -109,10 +114,6 @@ function Settings(settings::Dict{String, Any})
     @assert haskey(databases, "selected") "config file must have a 'selected' database path in the [databases] table using dot notation of the form \"db_type.db_name\" OR an empty string if not using a database"
     selected_db = databases["selected"]
     @assert selected_db isa String "the denoted default database must be a String (can be an empty string if not using a database)"
-    
-    @assert haskey(databases, "push_period") "config file must have a 'push_period' variable in the [databases] table set to an Integer (can be 0 for no periodic push)"
-    push_period = databases["push_period"]
-    @assert push_period isa Int "'push_period' must be an Integer (can be 0 for no periodic push)"
     
     #NOTE: should these be under 'databases'? (exit_code probably shouldn't!)
     @assert haskey(databases, "checkpoint") "config file must have a 'checkpoint' boolean variable. This field's value only matters if a database is selected"
@@ -153,7 +154,7 @@ function Settings(settings::Dict{String, Any})
             # end
         end
 
-        database = Database.DatabaseSettings{typeof(selected)}(selected, attached, iszero(push_period) ? nothing : push_period, checkpoint, full_store)
+        database = Database.DatabaseSettings{typeof(selected)}(selected, attached, checkpoint, full_store)
         # if databases["checkpoint"]
         #     checkpoint_db = databases["checkpoint_database"]
         #     if isempty(checkpoint_db)
@@ -164,7 +165,7 @@ function Settings(settings::Dict{String, Any})
         # end
     end
 
-    return Settings(use_seed, random_seed, procs, timeout, timeout_exit_code, database, figure_dirpath) # settings, 
+    return Settings(use_seed, random_seed, procs, timeout, timeout_exit_code, iszero(capture_interval) ? nothing : capture_interval, database, figure_dirpath) # settings, 
 end
 
 function Settings(toml_path::String)

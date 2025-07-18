@@ -41,7 +41,7 @@ name(database::DBInfo) = getfield(database, :name)
 struct DatabaseSettings{T<:DBInfo}
     main::T #main database
     attached::Vector{<:T} #databases to attach during queries
-    push_period::Union{Int, Nothing}
+    # push_period::Union{Int, Nothing} #changed to sample_frequency (not in db settings)
     checkpoint::Bool
     full_store::Bool #NOTE: do we want to handle this this way?
 end

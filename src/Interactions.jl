@@ -25,7 +25,18 @@ export
     displayname,
     payoff_matrix,
     strategies,
-    random_strategy
+    random_strategy,
+
+    GraphModel,
+
+    Model,
+    Parameters,
+    parameters,
+    Variables,
+    variables,
+    variables!,
+    agents,
+    State
 
 
 #include StructTypes for reconstructing custom structures

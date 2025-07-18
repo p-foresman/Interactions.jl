@@ -10,6 +10,7 @@ Basic Game type with row dimension S1 and column dimension S2.
 struct Game{S1, S2} #NOTE: ensure symmetric?? Make multiple types of games. Also need to update simulation engine to do more than symmetric games
     name::String
     payoff_matrix::PayoffMatrix{S1, S2}
+    # play_game::String
 
     function Game{S1, S2}(name::String, payoff_matrix::PayoffMatrix{S1, S2}) where {S1, S2}
         return new{S1, S2}(name, payoff_matrix)

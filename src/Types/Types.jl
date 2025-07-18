@@ -14,6 +14,17 @@ export
     strategies,
     random_strategy,
 
+    GraphModel,
+
+    Model,
+    Parameters,
+    parameters,
+    Variables,
+    variables,
+    variables!,
+    agents,
+    State
+
     #Agent stuff
 
 using

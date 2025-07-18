@@ -29,13 +29,13 @@ function simulate!(state::Types.State, timeout::Int, ::Nothing; stopping_conditi
     return nothing
 end
 
-function simulate!(state::Types.State, ::Nothing, db_push_period::Int; stopping_condition_reached::Function)
+function simulate!(state::Types.State, ::Nothing, capture_interval::Int; stopping_condition_reached::Function)
     while true
         run_period!(state)
         if stopping_condition_reached(state)
             Types.complete!(state)
             break
-        elseif iszero(period(state) % db_push_period)
+        elseif iszero(period(state) % capture_interval)
             break
         end
     end
@@ -43,7 +43,7 @@ function simulate!(state::Types.State, ::Nothing, db_push_period::Int; stopping_
     return nothing
 end
 
-function simulate!(state::Types.State, timeout::Int, db_push_period::Int; stopping_condition_reached::Function, start_time::Float64)
+function simulate!(state::Types.State, timeout::Int, capture_interval::Int; stopping_condition_reached::Function, start_time::Float64)
     while true
         run_period!(state)
         if stopping_condition_reached(state)
@@ -52,7 +52,7 @@ function simulate!(state::Types.State, timeout::Int, db_push_period::Int; stoppi
         elseif (time() - start_time) > timeout
             Types.timedout!(state)
             break
-        elseif iszero(period(state) % db_push_period)
+        elseif iszero(period(state) % capture_interval)
             break
         end
     end
