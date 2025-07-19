@@ -1,4 +1,4 @@
-const AgentSet{N, A} = SVector{N, A} where {N<:Integer, A<:AbstractAgent}
+const AgentSet{N, A} = SVector{N, A} where {N, A<:AbstractAgent} #NOTE: these probably shouldnt be static vectors (not good with large arrays) TEST SPEED DIFFERENCE
 const VertexSet{V} = SVector{V, Int}
 const Relationship = GraphsExt.Graphs.SimpleEdge{Int}
 const RelationshipSet{E} = SVector{E, Relationship}
@@ -51,7 +51,7 @@ struct AgentGraph{N, E, C, A} <: GraphsExt.AbstractGraph{Int}
     # matches_per_period::Int
 
     
-    function AgentGraph(graph::GraphsExt.Graph, AgentType::AbstractAgent)
+    function AgentGraph(graph::GraphsExt.Graph, AgentType::Type{<:AbstractAgent})
         N = GraphsExt.nv(graph)
         E = GraphsExt.ne(graph)
         agents::AgentSet{N, AgentType} = [AgentType(id=agent_number, is_hermit=iszero(GraphsExt.degree(graph, agent_number))) for agent_number in 1:N]

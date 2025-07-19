@@ -109,7 +109,7 @@ end
 
 
 function calculate_expected_utilities!(state::Types.State)
-    @inbounds for column in axes(Types.payoff_matrix(model), 2) #column strategies #NOTE: could just do 1:size(model, dim=2) or something. might be a bit faster
+    @inbounds for column in axes(Types.payoff_matrix(Types.model(state)), 2) #column strategies #NOTE: could just do 1:size(model, dim=2) or something. might be a bit faster
         for row in axes(Types.payoff_matrix(state.model), 1) #row strategies
             Types.increment_expected_utilities!(state, 1, row, Types.payoff_matrix(state.model)[row, column][1] * Types.opponent_strategy_probabilities(state, 1, column))
             Types.increment_expected_utilities!(state, 2, column, Types.payoff_matrix(state.model)[row, column][2] * Types.opponent_strategy_probabilities(state, 2, row))
@@ -122,7 +122,7 @@ end
 function make_choices!(state::Types.State) #NOTE: this might have to be defined by users for true generality
     for player_number in 1:2 #eachindex(model.pre_allocated_arrays.players)
         Types.rational_choice!(Types.players(state, player_number), maximum_strategy(Types.expected_utilities(state, player_number)))
-        Types.choice!(Types.players(state, player_number), rand() < Types.error_rate(state.model) ? Types.random_strategy(state.model, player_number) : Types.rational_choice(Types.players(state, player_number)))
+        Types.choice!(Types.players(state, player_number), rand() < Types.parameters(state, :error_rate) ? Types.random_strategy(state.model, player_number) : Types.rational_choice(Types.players(state, player_number)))
     end
 end
 
@@ -136,8 +136,8 @@ end
 
 
 function push_memories!(state::Types.State)
-    push_memory!(Types.players(state, 1), Types.choice(Types.players(state, 2)), Types.memory_length(state.model))
-    push_memory!(Types.players(state, 2), Types.choice(Types.players(state, 1)), Types.memory_length(state.model))
+    push_memory!(Types.players(state, 1), Types.choice(Types.players(state, 2)), Types.parameters(state, :memory_length))
+    push_memory!(Types.players(state, 2), Types.choice(Types.players(state, 1)), Types.parameters(state, :memory_length))
     return nothing
 end
 

@@ -69,27 +69,23 @@ function simulate(;kwargs...) #NOTE: probably don't want this method for simulat
 end
 
 
-function simulate_supervisor(recipe::Union{Types.Model, Generators.ModelGenerator, Generators.ModelGeneratorSet, Vector{Types.State}}; start_time::Float64, samples::Integer=1, db_group_id::Union{Integer, Nothing} = nothing)
-    timeout = Interactions.SETTINGS.timeout
-    
+function simulate_supervisor(recipe::Union{Types.Model, Generators.ModelGenerator, Generators.ModelGeneratorSet, Vector{Types.State}}; start_time::Float64, samples::Integer=1, db_group_id::Union{Integer, Nothing} = nothing)    
     producer, total_jobs = get_producer(recipe, samples)
 
     jobs = RemoteChannel(()->Channel{Types.State}(producer))
     results = RemoteChannel(()->Channel{Types.State}(nworkers()))
-    println("aaaaaaaaa")
-    println(recipe)
-    println(total_jobs)
+
     for worker in workers() #run a _simulate process on each worker
-        remote_do(simulate_worker, worker, jobs, results, start_time, timeout, Interactions.SETTINGS.capture_interval)
-        println(worker)
+        remote_do(simulate_worker, worker, jobs, results; start_time=start_time, timeout=Interactions.SETTINGS.timeout, capture_interval=Interactions.SETTINGS.capture_interval)
     end
-    println("cccccccc")
+    # simulate_worker(jobs, results; start_time=start_time, timeout=Interactions.SETTINGS.timeout, capture_interval=Interactions.SETTINGS.capture_interval)
+    
     num_received = 0
     num_completed = 0
     while num_received < total_jobs
         #push to db if the simulation has completed OR if checkpoint is active in settings. For timeout with checkpoint disabled, data is NOT pushed to a database (currently)
         result_state = take!(results)
-        simulation_uuid = Database.db_insert_simulation(result_state, result_state.model_id, db_group_id)
+        simulation_uuid = Database.db_insert_simulation(result_state, result_state.model_id, db_group_id; full_store=!isnothing(Interactions.DATABASE()) ? Interactions.DATABASE().full_store : false) #false doesnt matter here, if there's no database this will return a NoDatabaseError() and nothing will happen
         if Types.iscomplete(result_state)
             num_received += 1
             num_completed += 1
@@ -114,29 +110,28 @@ end
 
 function simulate_worker(jobs::RemoteChannel{Channel{Types.State}}, results::RemoteChannel{Channel{Types.State}}; start_time::Float64, timeout::Union{Int, Nothing}=nothing, capture_interval::Union{Int, Nothing}=nothing)
     local state::Types.State
-    println("Bbbbbbbbbb")
-    # while true
-    #     try
-    #         state = take!(jobs)
-    #     catch e
-    #         if e.captured.ex isa InvalidStateException #channel is closed, break out of loop and return function
-    #             break
-    #         else
-    #             throw(e)
-    #         end 
-    #     else
-    #         stopping_condition_reached = Types.get_enclosed_stopping_condition_fn(state.model)
-    #         Types.restore_rng_state(state)
+    while true
+        try
+            state = take!(jobs)
+        catch e
+            if e.captured.ex isa InvalidStateException #channel is closed, break out of loop and return function
+                break
+            else
+                throw(e)
+            end 
+        else
+            stopping_condition_reached = Types.get_enclosed_stopping_condition_fn(state.model)
+            Types.restore_rng_state(state)
+            
+            simulate!(state, timeout, capture_interval; stopping_condition_reached=stopping_condition_reached, start_time=start_time)
 
-    #         simulate!(state, timeout, capture_interval; stopping_condition_reached=stopping_condition_reached, start_time=start_time)
-
-    #         if Types.iscomplete(state) || Types.istimedout(state)
-    #             println(" --> periods elapsed: $(Types.period(state))")
-    #             flush(stdout)
-    #         end
-    #         put!(results, state)
-    #     end
-    # end
+            if Types.iscomplete(state) || Types.istimedout(state)
+                println(" --> periods elapsed: $(Types.period(state))")
+                flush(stdout)
+            end
+            put!(results, state)
+        end
+    end
     return nothing
 end
 

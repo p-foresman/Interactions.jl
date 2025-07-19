@@ -17,13 +17,24 @@ export
     GraphModel,
 
     Model,
+    model,
     Parameters,
     parameters,
     Variables,
     variables,
     variables!,
     agents,
-    State
+    ishermit,
+    ishermit!,
+    number_hermits,
+    State,
+    population_size,
+    rational_choice,
+    rational_choice!,
+    choice,
+    choice!,
+    memory,
+    period
 
     #Agent stuff
 

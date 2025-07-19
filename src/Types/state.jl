@@ -30,7 +30,7 @@ function BlankState(model::Model; model_id::Union{Int, Nothing}=nothing, random_
     V = num_vertices(agentgraph)
     E = num_edges(agentgraph)
     C = num_components(agentgraph)
-    preallocatedarrays::PreAllocatedArrays = PreAllocatedArrays(model)
+    preallocatedarrays::PreAllocatedArrays = PreAllocatedArrays(game(model))
 
     # all_user_variables = merge(Interactions.user_variables(parameters(model)), user_variables) #user_variables defined here should go last so that values overwrite defaults if applicable!
     # is_stopping_condition_test = parameters(model).stoppingcondition(model)
@@ -83,7 +83,7 @@ period!(state::State, value::Integer) = setfield!(state.mutables, :period, Int12
 
 Increment the period of the simulation.
 """
-increment_period!(state::State) = period!(state.mutables, period(state) + 1)
+increment_period!(state::State) = period!(state, period(state) + 1)
 
 """
     complete!(state::State)

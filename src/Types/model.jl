@@ -86,7 +86,7 @@ agent_type(model::Model) = getfield(model, :agent_type)
 
 Get the population size used in the model.
 """
-population_size(model::Model) = get_field(model, :population_size)
+population_size(model::Model) = getfield(model, :population_size)
 
 
 #Game
@@ -245,7 +245,7 @@ variables(model::Model, variable::Symbol) = getindex(variables(model), variable)
 
 function variables!(model::Model, variable::Symbol, value)
     @assert value isa typeof(variables(model, variable)) "Tried to update the variable '$variable' with a different type than what it was assigned. Must be $(typeof(value))"
-    setindex!(variables(model), variable, value)
+    setindex!(variables(model), value, variable)
 end
 
 

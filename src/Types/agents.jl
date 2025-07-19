@@ -67,12 +67,12 @@ Get the current memory of an agent.
 """
 memory(agent::Agent) = getfield(agent, :memory)
 
-"""
-    memory_length(agent::Agent)
+# """
+#     memory_length(agent::Agent)
 
-Get the memory length of an agent.
-"""
-memory_length(agent::Agent) = length(memory(agent))
+# Get the memory length of an agent.
+# """
+# memory_length(agent::Agent) = length(memory(agent))
 
 """
     rational_choice(agent::Agent)

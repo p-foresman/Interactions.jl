@@ -7,5 +7,5 @@ Interactions.sqlite
 /config/
 plots/
 plotting.toml
-user_files/
+user_files*/
 notes.txt

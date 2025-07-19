@@ -116,9 +116,9 @@ function Settings(settings::Dict{String, Any})
     @assert selected_db isa String "the denoted default database must be a String (can be an empty string if not using a database)"
     
     #NOTE: should these be under 'databases'? (exit_code probably shouldn't!)
-    @assert haskey(databases, "checkpoint") "config file must have a 'checkpoint' boolean variable. This field's value only matters if a database is selected"
-    checkpoint = databases["checkpoint"]
-    @assert checkpoint isa Bool "'checkpoint' value must be a Bool"
+    # @assert haskey(databases, "checkpoint") "config file must have a 'checkpoint' boolean variable. This field's value only matters if a database is selected"
+    # checkpoint = databases["checkpoint"]
+    # @assert checkpoint isa Bool "'checkpoint' value must be a Bool"
 
     @assert haskey(databases, "full_store") "config file must have a 'full_store' boolean variable. This field's value only matters if a database is selected"
     full_store = databases["full_store"]
@@ -154,7 +154,7 @@ function Settings(settings::Dict{String, Any})
             # end
         end
 
-        database = Database.DatabaseSettings{typeof(selected)}(selected, attached, checkpoint, full_store)
+        database = Database.DatabaseSettings{typeof(selected)}(selected, attached, full_store)
         # if databases["checkpoint"]
         #     checkpoint_db = databases["checkpoint_database"]
         #     if isempty(checkpoint_db)
