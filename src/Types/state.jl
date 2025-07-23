@@ -10,9 +10,9 @@ mutable struct StateMutables
     StateMutables() = new(Int128(0), false, false, nothing, nothing)
 end
 
-struct State{V, E, C}
+struct State{V, E, C, A}
     model::Model # {S1, S2}
-    agentgraph::AgentGraph{V, E, C}
+    agentgraph::AgentGraph{V, E, C, A}
     preallocatedarrays::PreAllocatedArrays #NOTE: PreAllocatedArrays currently 2 players only
     model_id::Union{Int, Nothing}
     random_seed::Union{Int, Nothing}
@@ -26,7 +26,8 @@ Generates an uninitialized State instance.
 """
 function BlankState(model::Model; model_id::Union{Int, Nothing}=nothing, random_seed::Union{Int, Nothing}=nothing)
     # agentgraph::AgentGraph = AgentGraph(model)
-    agentgraph::AgentGraph = AgentGraph(generate_graph(model), agent_type(model))
+    A = agent_type(model)
+    agentgraph::AgentGraph = AgentGraph(generate_graph(model), A)
     V = num_vertices(agentgraph)
     E = num_edges(agentgraph)
     C = num_components(agentgraph)
@@ -34,7 +35,7 @@ function BlankState(model::Model; model_id::Union{Int, Nothing}=nothing, random_
 
     # all_user_variables = merge(Interactions.user_variables(parameters(model)), user_variables) #user_variables defined here should go last so that values overwrite defaults if applicable!
     # is_stopping_condition_test = parameters(model).stoppingcondition(model)
-    return State{V, E, C}(model, agentgraph, preallocatedarrays, model_id, random_seed, StateMutables())
+    return State{V, E, C, A}(model, agentgraph, preallocatedarrays, model_id, random_seed, StateMutables())
 end
 
 """

@@ -75,10 +75,10 @@ function simulate_supervisor(recipe::Union{Types.Model, Generators.ModelGenerato
     jobs = RemoteChannel(()->Channel{Types.State}(producer))
     results = RemoteChannel(()->Channel{Types.State}(nworkers()))
 
-    for worker in workers() #run a _simulate process on each worker
-        remote_do(simulate_worker, worker, jobs, results; start_time=start_time, timeout=Interactions.SETTINGS.timeout, capture_interval=Interactions.SETTINGS.capture_interval)
-    end
-    # simulate_worker(jobs, results; start_time=start_time, timeout=Interactions.SETTINGS.timeout, capture_interval=Interactions.SETTINGS.capture_interval)
+    # for worker in workers() #run a _simulate process on each worker
+    #     remote_do(simulate_worker, worker, jobs, results; start_time=start_time, timeout=Interactions.SETTINGS.timeout, capture_interval=Interactions.SETTINGS.capture_interval)
+    # end
+    simulate_worker(jobs, results; start_time=start_time, timeout=Interactions.SETTINGS.timeout, capture_interval=Interactions.SETTINGS.capture_interval)
     
     num_received = 0
     num_completed = 0

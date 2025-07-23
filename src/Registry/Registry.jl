@@ -61,7 +61,7 @@ _graphmodel_fn_register = Register(GraphModels)
 Used to register a function as a graphmodel.
 """
 macro graphmodel(fn_expr)
-    fn = Registry.GraphModels.eval(fn_expr)
+    fn = GraphModels.eval(fn_expr)
     if !isa(fn, Function)
         #NOTE: delete function!
         throw(AssertionError("Missuse of @graphmodel. Must pass a Function as an argument"))
@@ -84,7 +84,7 @@ _starting_condition_fn_register = Register(StartingConditions)
 Used to register a function as a starting condition.
 """
 macro startingcondition(fn_expr)
-    Registry.eval(fn_expr)
+    StartingConditions.eval(fn_expr)
     push!(_starting_condition_fn_register, fn_expr)
     update_everywhere(:StartingConditions, :_starting_condition_fn_register)
     return nothing
@@ -102,7 +102,7 @@ _stopping_condition_fn_register = Register(StoppingConditions)
 Used to register a function as a stopping condition.
 """
 macro stoppingcondition(fn_expr)
-    Registry.eval(fn_expr)
+    StoppingConditions.eval(fn_expr)
     push!(_stopping_condition_fn_register, fn_expr)
     update_everywhere(:StoppingConditions, :_stopping_condition_fn_register)
     return nothing
