@@ -14,7 +14,8 @@ import
 using
     Random,
     Distributed,
-    DataStructures
+    DataStructures,
+    TimerOutputs
 
 include("engine.jl")
 include("producers.jl")
@@ -75,10 +76,10 @@ function simulate_supervisor(recipe::Union{Types.Model, Generators.ModelGenerato
     jobs = RemoteChannel(()->Channel{Types.State}(producer))
     results = RemoteChannel(()->Channel{Types.State}(nworkers()))
 
-    # for worker in workers() #run a _simulate process on each worker
-    #     remote_do(simulate_worker, worker, jobs, results; start_time=start_time, timeout=Interactions.SETTINGS.timeout, capture_interval=Interactions.SETTINGS.capture_interval)
-    # end
-    simulate_worker(jobs, results; start_time=start_time, timeout=Interactions.SETTINGS.timeout, capture_interval=Interactions.SETTINGS.capture_interval)
+    for worker in workers() #run a _simulate process on each worker
+        remote_do(simulate_worker, worker, jobs, results; start_time=start_time, timeout=Interactions.SETTINGS.timeout, capture_interval=Interactions.SETTINGS.capture_interval)
+    end
+    # simulate_worker(jobs, results; start_time=start_time, timeout=Interactions.SETTINGS.timeout, capture_interval=Interactions.SETTINGS.capture_interval)
     
     num_received = 0
     num_completed = 0
@@ -124,6 +125,7 @@ function simulate_worker(jobs::RemoteChannel{Channel{Types.State}}, results::Rem
             Types.restore_rng_state(state)
             
             simulate!(state, timeout, capture_interval; stopping_condition_reached=stopping_condition_reached, start_time=start_time)
+            # @timeit to "simulate!" simulate!(state, timeout, capture_interval; stopping_condition_reached=stopping_condition_reached, start_time=start_time, to=to)
 
             if Types.iscomplete(state) || Types.istimedout(state)
                 println(" --> periods elapsed: $(Types.period(state))")

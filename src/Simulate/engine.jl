@@ -1,8 +1,10 @@
 
 ############################### FUNCTIONS #######################################
 
+# function simulate(state::Types.State, args...; kwargs...) #NOTE: should include this to call simply
+
 #state is only mutated within the scope of this function (using multiple dispatch for to optimize main simulation loop)
-function simulate!(state::Types.State, ::Nothing, ::Nothing; stopping_condition_reached::Function)
+function simulate!(state::Types.State, ::Nothing, ::Nothing; stopping_condition_reached::Function, start_time::Float64)
     while true
         run_period!(state)
         if stopping_condition_reached(state)
@@ -71,6 +73,9 @@ function run_period!(state::Types.State)
             Types.reset_arrays!(state)
             Types.set_players!(state, component)
             play_game!(state)
+            # @timeit to "reset_arrays!" Types.reset_arrays!(state)
+            # @timeit to "set_players!" Types.set_players!(state, component)
+            # @timeit to "play_game!" play_game!(state; to=to)
         end
     end
     Types.increment_period!(state)
@@ -87,6 +92,10 @@ function play_game!(state::Types.State)
     calculate_expected_utilities!(state)
     make_choices!(state)
     push_memories!(state)
+    # @timeit to "find_opponent_strategy_probabilities" find_opponent_strategy_probabilities!(state)
+    # @timeit to "calculate_expected_utilities" calculate_expected_utilities!(state; to=to)
+    # @timeit to "make_choices" make_choices!(state; to=to)
+    # @timeit to "push_memories" push_memories!(state)
     return nothing
 end
 
@@ -111,8 +120,14 @@ end
 function calculate_expected_utilities!(state::Types.State)
     @inbounds for column in axes(Types.payoff_matrix(Types.model(state)), 2) #column strategies #NOTE: could just do 1:size(model, dim=2) or something. might be a bit faster
         for row in axes(Types.payoff_matrix(state.model), 1) #row strategies
-            Types.increment_expected_utilities!(state, 1, row, Types.payoff_matrix(state.model)[row, column][1] * Types.opponent_strategy_probabilities(state, 1, column))
-            Types.increment_expected_utilities!(state, 2, column, Types.payoff_matrix(state.model)[row, column][2] * Types.opponent_strategy_probabilities(state, 2, row))
+            Types.increment_expected_utilities!(state, 1, row, Types.payoff_matrix(Types.model(state))[row, column][1] * Types.opponent_strategy_probabilities(state, 1, column))
+            Types.increment_expected_utilities!(state, 2, column, Types.payoff_matrix(Types.model(state))[row, column][2] * Types.opponent_strategy_probabilities(state, 2, row))
+            # p1_payoff = @timeit to "payoff_matrix" Types.payoff_matrix(Types.model(state))[row, column][1]
+            # p2_payoff = @timeit to "payoff_matrix" Types.payoff_matrix(Types.model(state))[row, column][2]
+            # p1_weight = @timeit to "opponent_strategy_probabilities" Types.opponent_strategy_probabilities(state, 1, column)
+            # p2_weight = @timeit to "opponent_strategy_probabilities" Types.opponent_strategy_probabilities(state, 2, row)
+            # @timeit to "increment_expected_utilities" Types.increment_expected_utilities!(state, 1, row, p1_payoff * p1_weight)
+            # @timeit to "increment_expected_utilities" Types.increment_expected_utilities!(state, 2, column, p2_payoff * p2_weight)
         end
     end
     return nothing
@@ -136,8 +151,8 @@ end
 
 
 function push_memories!(state::Types.State)
-    push_memory!(Types.players(state, 1), Types.choice(Types.players(state, 2)), Types.parameters(state, :memory_length))
-    push_memory!(Types.players(state, 2), Types.choice(Types.players(state, 1)), Types.parameters(state, :memory_length))
+    push_memory!(Types.players(state, 1), Types.choice(Types.players(state, 2)), Int(Types.parameters(state, :memory_length)))
+    push_memory!(Types.players(state, 2), Types.choice(Types.players(state, 1)), Int(Types.parameters(state, :memory_length)))
     return nothing
 end
 

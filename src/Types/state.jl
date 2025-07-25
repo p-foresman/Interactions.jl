@@ -1,22 +1,27 @@
 #NOTE: Should I separate the database stuff into an inner type? (model_id, prev_simulation_uuid, rng_state_str)
 
-mutable struct StateMutables
+# mutable struct StateMutables #this increased time
+#     period::Int128 #NOTE: should this be added? if so, must make struct mutable and add const before agentgraph and preallocatedarrays
+#     complete::Bool
+#     timedout::Bool # used to determine whether a periodic push or a full exit is necessary
+#     prev_simulation_uuid::Union{String, Nothing} #needs to be updated when pushing to db periodically
+#     rng_state_str::Union{String, Nothing} #NOTE: change to Xoshiro down the line? Updated before being pushed to db
+
+#     StateMutables() = new(Int128(0), false, false, nothing, nothing)
+# end
+
+mutable struct State{S1, S2, L, A, V, E, C}
+    const model::Model{S1, S2, L, A} # {S1, S2}
+    const agentgraph::AgentGraph{V, E, C, A}
+    const preallocatedarrays::PreAllocatedArrays #NOTE: PreAllocatedArrays currently 2 players only
+    const model_id::Union{Int, Nothing}
+    const random_seed::Union{Int, Nothing}
+    # mutables::StateMutables
     period::Int128 #NOTE: should this be added? if so, must make struct mutable and add const before agentgraph and preallocatedarrays
     complete::Bool
     timedout::Bool # used to determine whether a periodic push or a full exit is necessary
     prev_simulation_uuid::Union{String, Nothing} #needs to be updated when pushing to db periodically
     rng_state_str::Union{String, Nothing} #NOTE: change to Xoshiro down the line? Updated before being pushed to db
-
-    StateMutables() = new(Int128(0), false, false, nothing, nothing)
-end
-
-struct State{V, E, C, A}
-    model::Model # {S1, S2}
-    agentgraph::AgentGraph{V, E, C, A}
-    preallocatedarrays::PreAllocatedArrays #NOTE: PreAllocatedArrays currently 2 players only
-    model_id::Union{Int, Nothing}
-    random_seed::Union{Int, Nothing}
-    mutables::StateMutables
 end
 
 """
@@ -24,9 +29,8 @@ end
 
 Generates an uninitialized State instance.
 """
-function BlankState(model::Model; model_id::Union{Int, Nothing}=nothing, random_seed::Union{Int, Nothing}=nothing)
+function BlankState(model::Model{S1, S2, L, A}; model_id::Union{Int, Nothing}=nothing, random_seed::Union{Int, Nothing}=nothing) where {S1, S2, L, A}
     # agentgraph::AgentGraph = AgentGraph(model)
-    A = agent_type(model)
     agentgraph::AgentGraph = AgentGraph(generate_graph(model), A)
     V = num_vertices(agentgraph)
     E = num_edges(agentgraph)
@@ -35,7 +39,7 @@ function BlankState(model::Model; model_id::Union{Int, Nothing}=nothing, random_
 
     # all_user_variables = merge(Interactions.user_variables(parameters(model)), user_variables) #user_variables defined here should go last so that values overwrite defaults if applicable!
     # is_stopping_condition_test = parameters(model).stoppingcondition(model)
-    return State{V, E, C, A}(model, agentgraph, preallocatedarrays, model_id, random_seed, StateMutables())
+    return State{S1, S2, L, A, V, E, C}(model, agentgraph, preallocatedarrays, model_id, random_seed, Int128(0), false, false, nothing, nothing)
 end
 
 """
@@ -70,14 +74,14 @@ model(state::State) = getfield(state, :model)
 
 Get the current period of the simulation.
 """
-period(state::State) = getfield(state.mutables, :period)
+period(state::State) = getfield(state, :period)
 
 """
     period!(state::State, value::Integer)
 
 Set the period of the simulation to value.
 """
-period!(state::State, value::Integer) = setfield!(state.mutables, :period, Int128(value))
+period!(state::State, value::Integer) = setfield!(state, :period, Int128(value))
 
 """
     increment_period!(state::State)
@@ -91,21 +95,21 @@ increment_period!(state::State) = period!(state, period(state) + 1)
 
 Mark the state as 'completed'
 """
-complete!(state::State) = setfield!(state.mutables, :complete, true)
+complete!(state::State) = setfield!(state, :complete, true)
 
 """
     iscomplete(state::State)
 
 Check if the state is 'completed'
 """
-iscomplete(state::State) = getfield(state.mutables, :complete)
+iscomplete(state::State) = getfield(state, :complete)
 
 
-timedout!(state::State) = setfield!(state.mutables, :timedout, true)
-istimedout(state::State) = getfield(state.mutables, :timedout)
+timedout!(state::State) = setfield!(state, :timedout, true)
+istimedout(state::State) = getfield(state, :timedout)
 
 # prev_simulation_uuid(state::State) = getfield(state, :prev_simulation_uuid)
-prev_simulation_uuid!(state::State, uuid::String) = setfield!(state.mutables, :prev_simulation_uuid, uuid)
+prev_simulation_uuid!(state::State, uuid::String) = setfield!(state, :prev_simulation_uuid, uuid)
 
 
 # AgentGraph
@@ -476,9 +480,9 @@ variables!(state::State, variable::Symbol, value) = variables!(model(state), var
 # end
 
 
-rng_state_str(state::State) = getfield(state.mutables, :rng_state_str)
+rng_state_str(state::State) = getfield(state, :rng_state_str)
 # rng_state(state::State) = JSON3.read(rng_state_str(state), Random.Xoshiro)
-rng_state!(state::State) = setfield!(state.mutables, :rng_state_str, JSON3.write(copy(Random.default_rng())))
+rng_state!(state::State) = setfield!(state, :rng_state_str, JSON3.write(copy(Random.default_rng())))
 # rng_state_str!(state::State, rng_state_str::String) =  setfield!(state, :rng_state_str, rng_state_str) #NOTE: dont want this method
 
 function restore_rng_state(state::State)

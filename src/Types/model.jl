@@ -1,5 +1,5 @@
-const Parameters = Dict{Symbol, Any} #NamedTuple #NOTE: should i just remove these? Probably makes things more confusing for user
-const Variables = Dict{Symbol, Any}
+const Parameters = Dict{Symbol, Float64} #NamedTuple #NOTE: should i just remove these? Probably makes things more confusing for user
+const Variables = Dict{Symbol, Float64}
 
 """
     Model{S1, S2, V, E}
@@ -12,13 +12,13 @@ S2 = column dimension of Game instance
 V = number of agents/vertices
 E = number of relationships/edges
 """
-struct Model{S1, S2, A<:AbstractAgent} #, GM <: GraphModel}
+struct Model{S1, S2, L, A<:AbstractAgent} #, GM <: GraphModel}
     # id::Union{Nothing, Int}
     agent_type::Type{A}
     population_size::Int
     # population::Tuple{Type{A}, Int} # (agent_type, population_size) --- sticking with one agent type for now, in the future could store a vector of population tuples which describe the population makeup
     # population::Dict{DataType, Int} #NOTE: could do this for heterogeneous population!
-    game::Game{S1, S2}
+    game::Game{S1, S2, L}
     graphmodel::GraphModel #NOTE: make this a concrete type for better performance? (tried and didnt help)
     starting_condition_fn_name::String
     stopping_condition_fn_name::String
@@ -26,28 +26,28 @@ struct Model{S1, S2, A<:AbstractAgent} #, GM <: GraphModel}
     variables::Variables #the variables used in the model (these variables can be altered during the course of a simulation)
     #graph::Union{Nothing, GraphsExt.Graph} #pass graph in here to be passed to state. if no graph is passed, it's generated when state is initialized
 
-    # function Model(population::Tuple{Type{A}, Int}, game::Game{S1, S2}, graphmodel::GraphModel, starting_condition_fn_name::String, stopping_condition_fn_name::String; parameters::Parameters=Parameters(), variables::Variables=Variables()) where {A<:AbstractAgent, S1, S2}
+    # function Model(population::Tuple{Type{A}, Int}, game::Game{S1, S2, L}, graphmodel::GraphModel, starting_condition_fn_name::String, stopping_condition_fn_name::String; parameters::Parameters=Parameters(), variables::Variables=Variables()) where {A<:AbstractAgent, S1, S2}
     #     @assert isdefined(Registry.StartingConditions, Symbol(starting_condition_fn_name)) "'starting_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @startingcondition macro before function to register it"
     #     @assert isdefined(Registry.StoppingConditions, Symbol(stopping_condition_fn_name)) "'stopping_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @stoppingcondition macro before function to register it"
     #     return new{S1, S2, A}(population, game, graphmodel, starting_condition_fn_name, stopping_condition_fn_name, parameters, variables)
     # end
-    function Model(agent_type::Type{A}, population_size::Integer, game::Game{S1, S2}, graphmodel::GraphModel, starting_condition_fn_name::String, stopping_condition_fn_name::String; parameters::Parameters=Parameters(), variables::Variables=Variables()) where {A<:AbstractAgent, S1, S2}
+    function Model(agent_type::Type{A}, population_size::Integer, game::Game{S1, S2, L}, graphmodel::GraphModel, starting_condition_fn_name::String, stopping_condition_fn_name::String; parameters::Parameters=Parameters(), variables::Variables=Variables()) where {A<:AbstractAgent, S1, S2, L}
         @assert isdefined(Registry.StartingConditions, Symbol(starting_condition_fn_name)) "'starting_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @startingcondition macro before function to register it"
         @assert isdefined(Registry.StoppingConditions, Symbol(stopping_condition_fn_name)) "'stopping_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @stoppingcondition macro before function to register it"
         # population::Tuple{Type{A}, Int} = (agent_type, Int(population_size))
-        return new{S1, S2, A}(agent_type, population_size, game, graphmodel, starting_condition_fn_name, stopping_condition_fn_name, parameters, variables)
+        return new{S1, S2, L, A}(agent_type, population_size, game, graphmodel, starting_condition_fn_name, stopping_condition_fn_name, parameters, variables)
     end
-    # function Model(game::Game{S1, S2}, params::Parameters, graphmodel::GraphModel, graph::GraphsExt.Graph) where {S1, S2}
-    #     return new{S1, S2}(game, params, graphmodel, graph) #this constructor allows a graph to be fed in
+    # function Model(game::Game{S1, S2, L}, params::Parameters, graphmodel::GraphModel, graph::GraphsExt.Graph) where {S1, S2, L}
+    #     return new{S1, S2, L}(game, params, graphmodel, graph) #this constructor allows a graph to be fed in
     # end
-    # function Model(game::Game{S1, S2}, params::Parameters, graphmodel::GraphModel, graph_adj_matrix::Matrix) where {S1, S2}
+    # function Model(game::Game{S1, S2, L}, params::Parameters, graphmodel::GraphModel, graph_adj_matrix::Matrix) where {S1, S2, L}
     #     @assert size(graph_adj_matrix)[1] == size(graph_adj_matrix)[2] "adjecency matrix must be equal lengths in both dimensions"
     #     graph = GraphsExt.Graph(graph_adj_matrix) #this constructor allows an adjacency matrix to be fed in for graph generation
-    #     return new{S1, S2}(game, params, graphmodel, graph)
+    #     return new{S1, S2, L}(game, params, graphmodel, graph)
     # end
-    # function Model(game::Game{S1, S2}, params::Parameters, graphmodel::GraphModel, graph_adj_matrix_str::String) where {S1, S2}
+    # function Model(game::Game{S1, S2, L}, params::Parameters, graphmodel::GraphModel, graph_adj_matrix_str::String) where {S1, S2, L}
     #     graph = GraphsExt.Graph(graph_adj_matrix_str) #this constructor allows an adjacency matrix string to be fed in for graph generation
-    #     return new{S1, S2}(game, params, graphmodel, graph)
+    #     return new{S1, S2, L}(game, params, graphmodel, graph)
     # end
 end
 
