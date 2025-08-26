@@ -13,8 +13,8 @@ include("GraphsExt/GraphsExt.jl")
 # import .GraphsExt
 
 include("Registry/Registry.jl")
-using .Registry: @graphmodel, @startingcondition, @stoppingcondition
-export @graphmodel, @startingcondition, @stoppingcondition
+using .Registry: @graphmodel, @startingcondition, @stoppingcondition, @interaction
+export @graphmodel, @startingcondition, @stoppingcondition, @interaction
 
 #types used in Interactions
 include("Types/Types.jl")

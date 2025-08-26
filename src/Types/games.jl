@@ -1,4 +1,4 @@
-const PayoffMatrix{S1, S2, L} = SMatrix{S1, S2, Tuple{Int, Int}, L} #NOTE: try to reduce this to drop the L since L=S1*S2
+const PayoffMatrix{S1, S2, L} = SMatrix{S1, S2, Tuple{Int, Int}, L} #reducing to {S1, S2} results in large slowdown
 
 
 
@@ -10,25 +10,29 @@ Basic Game type with row dimension S1 and column dimension S2.
 struct Game{S1, S2, L} #NOTE: ensure symmetric?? Make multiple types of games. Also need to update simulation engine to do more than symmetric games
     name::String
     payoff_matrix::PayoffMatrix{S1, S2, L}
-    # play_game::String
+    interaction_fn_name::String
 
-    function Game{S1, S2, L}(name::String, payoff_matrix::PayoffMatrix{S1, S2, L}) where {S1, S2, L}
-        return new{S1, S2, L}(name, payoff_matrix)
+    function Game{S1, S2, L}(name::String, payoff_matrix::PayoffMatrix{S1, S2, L}, interaction_fn_name::String) where {S1, S2, L}
+        @assert isdefined(Registry.Games, Symbol(interaction_fn_name)) "'interaction_fn_name' provided does not correlate to a defined function in the Registry. Must use @interaction macro before function to register it"
+        return new{S1, S2, L}(name, payoff_matrix, interaction_fn_name)
     end
-    function Game(name::String, payoff_matrix::PayoffMatrix{S1, S2, L}) where {S1, S2, L}
-        return new{S1, S2, L}(name, payoff_matrix)
+    function Game(name::String, payoff_matrix::PayoffMatrix{S1, S2, L}, interaction_fn_name::String) where {S1, S2, L}
+        @assert isdefined(Registry.Games, Symbol(interaction_fn_name)) "'interaction_fn_name' provided does not correlate to a defined function in the Registry. Must use @interaction macro before function to register it"
+        return new{S1, S2, L}(name, payoff_matrix, interaction_fn_name)
     end
-    function Game{S1, S2, L}(name::String, payoff_matrix::Matrix{Tuple{Int, Int}}) where {S1, S2, L}
+    function Game{S1, S2, L}(name::String, payoff_matrix::Matrix{Tuple{Int, Int}}, interaction_fn_name::String) where {S1, S2, L}
+        @assert isdefined(Registry.Games, Symbol(interaction_fn_name)) "'interaction_fn_name' provided does not correlate to a defined function in the Registry. Must use @interaction macro before function to register it"
         static_payoff_matrix = PayoffMatrix{S1, S2, L}(payoff_matrix)
-        return new{S1, S2, L}(name, static_payoff_matrix)
+        return new{S1, S2, L}(name, static_payoff_matrix, interaction_fn_name)
     end
-    function Game(name::String, payoff_matrix::Matrix{Tuple{Int, Int}})
+    function Game(name::String, payoff_matrix::Matrix{Tuple{Int, Int}}, interaction_fn_name::String)
+        @assert isdefined(Registry.Games, Symbol(interaction_fn_name)) "'interaction_fn_name' provided does not correlate to a defined function in the Registry. Must use @interaction macro before function to register it"
         matrix_size = size(payoff_matrix)
         S1 = matrix_size[1]
         S2 = matrix_size[2]
         L = S1 * S2
         static_payoff_matrix = PayoffMatrix{S1, S2, L}(payoff_matrix)
-        return new{S1, S2, L}(name, static_payoff_matrix)
+        return new{S1, S2, L}(name, static_payoff_matrix, interaction_fn_name)
     end
     function Game(name::String, payoff_matrix::Matrix{Int}) #for a zero-sum payoff matrix ########################## MUST FIX THIS!!!!!!!! #####################
         matrix_size = size(payoff_matrix)
@@ -94,6 +98,22 @@ strategies(game::Game, player_number::Integer) = getindex(strategies(game), play
 Get a random strategy from the possible strategies that a player can play in a game.
 """
 random_strategy(game::Game, player_number::Integer) = rand(strategies(game, player_number))
+
+
+
+"""
+    interaction_fn_name(game::Game)
+
+Get the 'interaction_fn_name' Game field.
+"""
+interaction_fn_name(game::Game) = getfield(game, :interaction_fn_name)
+
+"""
+    interaction_fn(game::Game)
+
+Get the user-defined interaction function which correlates to the String stored in the 'interaction_fn_name' Game field.
+"""
+interaction_fn(game::Game) = getfield(Registry.Games, Symbol(interaction_fn_name(game)))
 
 
 Base.show(game::Game) = println(displayname(game))

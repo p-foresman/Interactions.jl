@@ -126,6 +126,20 @@ Get a random strategy from the possible strategies that can be played in the mod
 random_strategy(model::Model, player_number::Int) = random_strategy(game(model), player_number)
 
 
+"""
+    interaction_fn_name(model::Model)
+
+Get the 'interaction_fn_name' Game field.
+"""
+interaction_fn_name(model::Model) = interaction_fn_name(game(model))
+
+"""
+    interaction_fn(model::Model)
+
+Get the user-defined interaction function which correlates to the String stored in the 'interaction_fn_name' Game field.
+"""
+interaction_fn(model::Model) = interaction_fn(game(model))
+
 
 # GraphModel
 """
@@ -168,17 +182,19 @@ end
 # end
 
 
+
+
 """
     starting_condition_fn_name(model::Model)
 
-Get the 'starting_condition_fn_name' Parameters field.
+Get the 'starting_condition_fn_name' field.
 """
 starting_condition_fn_name(model::Model) = getfield(model, :starting_condition_fn_name)
 
 """
     starting_condition_fn(model::Model)
 
-Get the user-defined starting condition function which correlates to the String stored in the 'starting_condition_fn_name' Parameters field.
+Get the user-defined starting condition function which correlates to the String stored in the 'starting_condition_fn_name' field.
 """
 starting_condition_fn(model::Model) = getfield(Registry.StartingConditions, Symbol(starting_condition_fn_name(model)))
 
@@ -193,21 +209,21 @@ starting_condition_fn(model::Model) = getfield(Registry.StartingConditions, Symb
 """
     stopping_condition_fn_name(model::Model)
 
-Get the 'stopping_condition_fn_name' Parameters field.
+Get the 'stopping_condition_fn_name' field.
 """
 stopping_condition_fn_name(model::Model) = getfield(model, :stopping_condition_fn_name)
 
 """
     stopping_condition_fn(model::Model)
 
-Get the user-defined stopping condition function which correlates to the String stored in the 'stopping_condition_fn' Parameters field.
+Get the user-defined stopping condition function which correlates to the String stored in the 'stopping_condition_fn' field.
 """
 stopping_condition_fn(model::Model) = getfield(Registry.StoppingConditions, Symbol(stopping_condition_fn_name(model)))
 
 """
     get_enclosed_stopping_condition_fn(model::Model)
 
-Call the user-defined stopping condition function which correlates to the String stored in the 'starting_condition_fn_str' Parameters field to get the enclosed function.
+Call the user-defined stopping condition function which correlates to the String stored in the 'starting_condition_fn_str' field to get the enclosed function.
 """
 get_enclosed_stopping_condition_fn(model::Model) = stopping_condition_fn(model)(model) #NOTE: this closure method can probably be eliminated
 

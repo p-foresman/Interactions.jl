@@ -50,6 +50,29 @@ function update_everywhere(registry_module_key::Symbol, register_key::Symbol)
 end
 
 
+###### Interaction Register #######
+module Games using ..Interactions, Graphs end #NOTE: wanted an empty submodule for a contained namespace, but need to use some packages so that user functions can access them (could import and make users use full names)
+
+_game_fn_register = Register(Games)
+
+"""
+    @interaction
+
+Used to register a function as an instance of a game.
+"""
+macro interaction(fn_expr)
+    fn = Games.eval(fn_expr)
+    if !isa(fn, Function)
+        #NOTE: delete function!
+        throw(AssertionError("Missuse of @interaction. Must pass a Function as an argument"))
+    end
+    push!(_game_fn_register, fn_expr) #NOTE: should i push the actual function? Actually, should I get a list of methods with methods(fn_name) and push all methods?
+    update_everywhere(:Games, :_game_fn_register)
+    return nothing
+end
+
+
+
 ###### Graph Model Register #######
 module GraphModels using ..Interactions, Graphs end #NOTE: wanted an empty submodule for a contained namespace, but need to use some packages so that user functions can access them (could import and make users use full names)
 

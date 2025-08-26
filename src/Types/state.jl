@@ -61,6 +61,13 @@ Call the user-defined starting condition function which correlates to the String
 starting_condition_fn_call(state::State) = starting_condition_fn(model(state))(state)
 
 
+"""
+    interaction_fn_call(state::State)
+
+Call the user-defined interaction function which correlates to the String stored in the 'starting_condition_fn_str' Model field.
+"""
+interaction_fn_call(state::State) = interaction_fn(model(state))(state)
+
 
 """
     model(state::State)
