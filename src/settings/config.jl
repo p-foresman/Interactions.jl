@@ -305,6 +305,7 @@ function configure(toml_path::String="")
                 Registry.update_everywhere(:GraphModels, :_graphmodel_fn_register)
                 Registry.update_everywhere(:StartingConditions, :_starting_condition_fn_register)
                 Registry.update_everywhere(:StoppingConditions, :_stopping_condition_fn_register)
+                Registry.update_everywhere(:Games, :_game_fn_register)
             end            
 
         end

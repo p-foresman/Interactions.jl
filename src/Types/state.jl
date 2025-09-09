@@ -13,11 +13,13 @@
 mutable struct State{S1, S2, L, A, V, E, C}
     const model::Model{S1, S2, L, A} # {S1, S2}
     const agentgraph::AgentGraph{V, E, C, A}
+    # const players::Vector{Agent} #current players
+    # did_interact::Bool # did the players interact yet?
     const preallocatedarrays::PreAllocatedArrays #NOTE: PreAllocatedArrays currently 2 players only
     const model_id::Union{Int, Nothing}
     const random_seed::Union{Int, Nothing}
     # mutables::StateMutables
-    period::Int128 #NOTE: should this be added? if so, must make struct mutable and add const before agentgraph and preallocatedarrays
+    period::Int128
     complete::Bool
     timedout::Bool # used to determine whether a periodic push or a full exit is necessary
     prev_simulation_uuid::Union{String, Nothing} #needs to be updated when pushing to db periodically
@@ -319,13 +321,7 @@ function set_players!(state::State)
     return nothing
 end
 
-#temp for complete_graph
-# function set_players!(state::State) #NOTE: this could be better
-#     v = rand(Graphs.vertices(graph(state)))
-#     player!(state, 1, v)
-#     player!(state, 2, rand(neighbors(graph(state), v)))
-#     return nothing
-# end
+
 
 """
     opponent_strategy_recollection(state::State)

@@ -1,5 +1,6 @@
 const Parameters = Dict{Symbol, Float64} #NamedTuple #NOTE: should i just remove these? Probably makes things more confusing for user
 const Variables = Dict{Symbol, Float64}
+const Arrays = Dict{Symbol, Vector}
 
 """
     Model{S1, S2, V, E}
@@ -24,6 +25,7 @@ struct Model{S1, S2, L, A<:AbstractAgent} #, GM <: GraphModel}
     stopping_condition_fn_name::String
     parameters::Parameters #the parameters used in the model (immutable dictionary - these parameters cannot be changed during the course of a simulation)
     variables::Variables #the variables used in the model (these variables can be altered during the course of a simulation)
+    # arrays::
     #graph::Union{Nothing, GraphsExt.Graph} #pass graph in here to be passed to state. if no graph is passed, it's generated when state is initialized
 
     # function Model(population::Tuple{Type{A}, Int}, game::Game{S1, S2, L}, graphmodel::GraphModel, starting_condition_fn_name::String, stopping_condition_fn_name::String; parameters::Parameters=Parameters(), variables::Variables=Variables()) where {A<:AbstractAgent, S1, S2}
