@@ -1,6 +1,6 @@
-const Parameters = Dict{Symbol, Float64} #NamedTuple #NOTE: should i just remove these? Probably makes things more confusing for user
+const Parameters = Dict{Symbol, Float64} #NOTE: could make these <:Real, since some parameters/variables would make more sense as Integers (this might be overcomplicating though)
 const Variables = Dict{Symbol, Float64}
-const Arrays = Dict{Symbol, SVector{2, Vector{Float64}}} #rename to PreAllocatedArrays?
+const Arrays = Dict{Symbol, Vector{Vector{Float64}}} #rename to PreAllocatedArrays?
 
 """
     Model{S1, S2, V, E}

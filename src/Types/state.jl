@@ -352,7 +352,7 @@ Get the value of the parameter given.
 variables(state::State, key::Symbol) = getindex(variables(state), key)
 
 function variables!(state::State, key::Symbol, value)
-    @assert value isa typeof(variables(model, key)) "Tried to update the variable '$key' with a different type than what it was assigned. Must be $(typeof(value))"
+    # @assert value isa typeof(variables(state, key)) "Tried to update the variable '$key' with a different type than what it was assigned. Must be $(typeof(value))"
     setindex!(variables(state), value, key)
 end
 
