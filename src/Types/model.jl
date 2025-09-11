@@ -1,6 +1,6 @@
 const Parameters = Dict{Symbol, Float64} #NamedTuple #NOTE: should i just remove these? Probably makes things more confusing for user
 const Variables = Dict{Symbol, Float64}
-const Arrays = Dict{Symbol, Vector}
+const Arrays = Dict{Symbol, SVector{2, Vector{Float64}}} #rename to PreAllocatedArrays?
 
 """
     Model{S1, S2, V, E}
@@ -25,7 +25,7 @@ struct Model{S1, S2, L, A<:AbstractAgent} #, GM <: GraphModel}
     stopping_condition_fn_name::String
     parameters::Parameters #the parameters used in the model (immutable dictionary - these parameters cannot be changed during the course of a simulation)
     variables::Variables #the variables used in the model (these variables can be altered during the course of a simulation)
-    # arrays::
+    arrays::Arrays
     #graph::Union{Nothing, GraphsExt.Graph} #pass graph in here to be passed to state. if no graph is passed, it's generated when state is initialized
 
     # function Model(population::Tuple{Type{A}, Int}, game::Game{S1, S2, L}, graphmodel::GraphModel, starting_condition_fn_name::String, stopping_condition_fn_name::String; parameters::Parameters=Parameters(), variables::Variables=Variables()) where {A<:AbstractAgent, S1, S2}
@@ -33,11 +33,11 @@ struct Model{S1, S2, L, A<:AbstractAgent} #, GM <: GraphModel}
     #     @assert isdefined(Registry.StoppingConditions, Symbol(stopping_condition_fn_name)) "'stopping_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @stoppingcondition macro before function to register it"
     #     return new{S1, S2, A}(population, game, graphmodel, starting_condition_fn_name, stopping_condition_fn_name, parameters, variables)
     # end
-    function Model(agent_type::Type{A}, population_size::Integer, game::Game{S1, S2, L}, graphmodel::GraphModel, starting_condition_fn_name::String, stopping_condition_fn_name::String; parameters::Parameters=Parameters(), variables::Variables=Variables()) where {A<:AbstractAgent, S1, S2, L}
+    function Model(agent_type::Type{A}, population_size::Integer, game::Game{S1, S2, L}, graphmodel::GraphModel, starting_condition_fn_name::String, stopping_condition_fn_name::String; parameters::Parameters=Parameters(), variables::Variables=Variables(), arrays::Arrays=Arrays()) where {A<:AbstractAgent, S1, S2, L}
         @assert isdefined(Registry.StartingConditions, Symbol(starting_condition_fn_name)) "'starting_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @startingcondition macro before function to register it"
         @assert isdefined(Registry.StoppingConditions, Symbol(stopping_condition_fn_name)) "'stopping_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @stoppingcondition macro before function to register it"
         # population::Tuple{Type{A}, Int} = (agent_type, Int(population_size))
-        return new{S1, S2, L, A}(agent_type, population_size, game, graphmodel, starting_condition_fn_name, stopping_condition_fn_name, parameters, variables)
+        return new{S1, S2, L, A}(agent_type, population_size, game, graphmodel, starting_condition_fn_name, stopping_condition_fn_name, parameters, variables, arrays)
     end
     # function Model(game::Game{S1, S2, L}, params::Parameters, graphmodel::GraphModel, graph::GraphsExt.Graph) where {S1, S2, L}
     #     return new{S1, S2, L}(game, params, graphmodel, graph) #this constructor allows a graph to be fed in
@@ -231,7 +231,10 @@ get_enclosed_stopping_condition_fn(model::Model) = stopping_condition_fn(model)(
 
 
 
-# Parameters
+# ================
+# Model Parameters
+# ================
+
 """
     parameters(model::Model)
 
@@ -240,13 +243,20 @@ Get the Parameters instance in the model.
 parameters(model::Model) = getfield(model, :parameters)
 
 """
-    parameters(model::Model, param::Symbol)
+    parameters(model::Model, key::Symbol)
 
 Get the value of the parameter given.
 """
-parameters(model::Model, param::Symbol) = getindex(parameters(model), param)
+parameters(model::Model, key::Symbol) = getindex(parameters(model), key)
 
-# Variables
+
+
+# =================
+# Initial Variables
+# =================
+
+# note: for the model, only getters are implemented
+
 """
     variables(model::Model)
 
@@ -255,17 +265,32 @@ Get the Parameters instance in the model.
 variables(model::Model) = getfield(model, :variables)
 
 """
-    variables(model::Model, variable::Symbol)
+    variables(model::Model, name::Symbol)
 
 Get the value of the parameter given.
 """
-variables(model::Model, variable::Symbol) = getindex(variables(model), variable)
+variables(model::Model, key::Symbol) = getindex(variables(model), key)
 
-function variables!(model::Model, variable::Symbol, value)
-    @assert value isa typeof(variables(model, variable)) "Tried to update the variable '$variable' with a different type than what it was assigned. Must be $(typeof(value))"
-    setindex!(variables(model), value, variable)
-end
 
+# ============================
+# Initial Pre Allocated Arrays
+# ============================
+
+# note: for the model, only getters are implemented
+
+"""
+    arrays(model::Model)
+
+Get the pre-allocated arrays in the model.
+"""
+arrays(model::Model) = getfield(model, :arrays)
+
+"""
+    arrays(model::Model, key::Symbol)
+
+Get the pre-allocated array with the associated key.
+"""
+arrays(model::Model, key::Symbol) = getindex(arrays(model), key)
 
 
 

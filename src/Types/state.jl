@@ -13,9 +13,11 @@
 mutable struct State{S1, S2, L, A, V, E, C}
     const model::Model{S1, S2, L, A} # {S1, S2}
     const agentgraph::AgentGraph{V, E, C, A}
-    # const players::Vector{Agent} #current players
+    const players::Vector{Agent} #current players
+    const variables::Variables #copied from model (model should never be updated!)
+    const arrays::Arrays #copied from model (model should never be updated!)
     # did_interact::Bool # did the players interact yet?
-    const preallocatedarrays::PreAllocatedArrays #NOTE: PreAllocatedArrays currently 2 players only
+    # const preallocatedarrays::PreAllocatedArrays #NOTE: PreAllocatedArrays currently 2 players only
     const model_id::Union{Int, Nothing}
     const random_seed::Union{Int, Nothing}
     # mutables::StateMutables
@@ -37,11 +39,12 @@ function BlankState(model::Model{S1, S2, L, A}; model_id::Union{Int, Nothing}=no
     V = num_vertices(agentgraph)
     E = num_edges(agentgraph)
     C = num_components(agentgraph)
-    preallocatedarrays::PreAllocatedArrays = PreAllocatedArrays(game(model))
+    players = Vector{Agent}([Agent() for _ in 1:2]) #NOTE: hard coded to two players (this should be SVector)
+    # preallocatedarrays::PreAllocatedArrays = PreAllocatedArrays(game(model))
 
     # all_user_variables = merge(Interactions.user_variables(parameters(model)), user_variables) #user_variables defined here should go last so that values overwrite defaults if applicable!
     # is_stopping_condition_test = parameters(model).stoppingcondition(model)
-    return State{S1, S2, L, A, V, E, C}(model, agentgraph, preallocatedarrays, model_id, random_seed, Int128(0), false, false, nothing, nothing)
+    return State{S1, S2, L, A, V, E, C}(model, agentgraph, players, deepcopy(variables(model)), deepcopy(arrays(model)), model_id, random_seed, Int128(0), false, false, nothing, nothing)
 end
 
 """
@@ -257,40 +260,34 @@ number_hermits(state::State) = number_hermits(agentgraph(state))
 
 
 #PreAllocatedArrays
-"""
-    preallocatedarrays(state::State)
-
-Get the PreAllocatedArrays instance in the model.
-"""
-preallocatedarrays(state::State) = getfield(state, :preallocatedarrays)
 
 """
     players(state::State)
 
 Get the currently cached players in the model.
 """
-players(state::State) = players(preallocatedarrays(state))
+players(state::State) = getfield(state, :players)
 
 """
     players(state::State, player_number::Integer)
 
 Get the player indexed by player_number currently cached in the model.
 """
-players(state::State, player_number::Integer) = players(preallocatedarrays(state), player_number)
+players(state::State, player_number::Integer) = getindex(players(state), player_number)
 
 """
     player!(state::State, player_number::Integer, agent::Agent)
 
 Set the player indexed by player_number to the Agent instance agent.
 """
-player!(state::State, player_number::Integer, agent::Agent) = player!(preallocatedarrays(state), player_number, agent)
+player!(state::State, player_number::Integer, agent::Agent) = setindex!(players(state), agent, player_number)
 
 """
     player!(state::State, player_number::Integer, agent_number::Integer)
 
 Set the player indexed by player_number to the Agent instance indexed by agent_number in the AgentGraph instance.
 """
-player!(state::State, player_number::Integer, agent_number::Integer) = player!(preallocatedarrays(state), player_number, agents(state, agent_number))
+player!(state::State, player_number::Integer, agent_number::Integer) = player!(state, player_number, agents(state, agent_number))
 
 """
     set_players!(state::State, component::ConnectedComponent)
@@ -323,107 +320,6 @@ end
 
 
 
-"""
-    opponent_strategy_recollection(state::State)
-
-Get the currently cached recollections of each player (i.e., the quantity of each strategy that resides in players' memories).
-"""
-opponent_strategy_recollection(state::State) = opponent_strategy_recollection(preallocatedarrays(state))
-
-"""
-    opponent_strategy_recollection(state::State, player_number::Integer)
-
-Get the currently cached recollection of the player indexed by player_number.
-"""
-opponent_strategy_recollection(state::State, player_number::Integer) = opponent_strategy_recollection(preallocatedarrays(state), player_number)
-
-"""
-    opponent_strategy_recollection(state::State, player_number::Integer, index::Integer)
-
-Get the currently cached recollection of a strategy indexed by index of the player indexed by player_number.
-"""
-opponent_strategy_recollection(state::State, player_number::Integer, index::Integer) = opponent_strategy_recollection(preallocatedarrays(state), player_number, index)
-
-"""
-    opponent_strategy_recollection!(state::State, player_number::Integer, index::Integer, value::Int)
-
-Set the recollection of a strategy indexed by index of the player indexed by player_number.
-"""
-opponent_strategy_recollection!(state::State, player_number::Integer, index::Integer, value::Int) = opponent_strategy_recollection!(preallocatedarrays(state), player_number, index, value)
-
-"""
-    increment_opponent_strategy_recollection!(state::State, player_number::Integer, index::Integer, value::Int=1)
-
-Increment the recollection of a strategy indexed by index of the player indexed by player_number by value (defaults to an increment of 1).
-"""
-increment_opponent_strategy_recollection!(state::State, player_number::Integer, index::Integer, value::Int=1) = increment_opponent_strategy_recollection!(preallocatedarrays(state), player_number, index, value)
-
-"""
-    opponent_strategy_probabilities(state::State)
-
-Get the currently cached probabilities that each player's opponent will play each strategy (from recollection).
-"""
-opponent_strategy_probabilities(state::State) = opponent_strategy_probabilities(preallocatedarrays(state))
-
-"""
-    opponent_strategy_probabilities(state::State, player_number::Integer)
-
-Get the currently cached probabilities that the player indexed by player_number's opponent will play each strategy (from recollection).
-"""
-opponent_strategy_probabilities(state::State, player_number::Integer) = opponent_strategy_probabilities(preallocatedarrays(state), player_number)
-
-"""
-    opponent_strategy_probabilities(state::State, player_number::Integer, index::Integer)
-
-Get the currently cached probability that the player indexed by player_number's opponent will play the strategy indexed by index.
-"""
-opponent_strategy_probabilities(state::State, player_number::Integer, index::Integer) = opponent_strategy_probabilities(preallocatedarrays(state), player_number, index)
-
-"""
-    expected_utilities(state::State)
-
-Get the cached expected utilities for playing each strategy for both players.
-"""
-expected_utilities(state::State) = expected_utilities(preallocatedarrays(state))
-
-"""
-    expected_utilities(state::State, player_number::Integer)
-
-Get the cached expected utilities for playing each strategy for the player indexed by player_number.
-"""
-expected_utilities(state::State, player_number::Integer) = expected_utilities(preallocatedarrays(state), player_number)
-
-"""
-    expected_utilities(state::State, player_number::Integer, index::Integer)
-
-Get the cached expected utility for playing the strategy indexed by index for the player indexed by player_number.
-"""
-expected_utilities(state::State, player_number::Integer, index::Integer) = expected_utilities(preallocatedarrays(state), player_number, index)
-
-"""
-    expected_utilities!(state::State, player_number::Integer, index::Integer, value::AbstractFloat)
-
-Set the expected utility for playing the strategy indexed by index for the player indexed by player_number.
-"""
-expected_utilities!(state::State, player_number::Integer, index::Integer, value::AbstractFloat) = expected_utilities!(preallocatedarrays(state), player_number, index, value)
-
-"""
-    increment_expected_utilities!(state::State, player_number::Integer, index::Integer, value::AbstractFloat)
-
-Increment the expected utility for playing the strategy indexed by index for the player indexed by player_number by value.
-"""
-increment_expected_utilities!(state::State, player_number::Integer, index::Integer, value::AbstractFloat) = increment_expected_utilities!(preallocatedarrays(state), player_number, index, value)
-
-"""
-    reset_arrays!(state::State)
-
-Reset the cached arrays in the model's PreAllocatedArrays instance to zeros.
-"""
-reset_arrays!(state::State) = reset_arrays!(preallocatedarrays(state))
-
-
-
-
 # Parameters
 """
     parameters(state::State)
@@ -444,18 +340,79 @@ parameters(state::State, param::Symbol) = parameters(model(state), param)
 """
     variables(state::State)
 
-Get the Parameters instance in the model.
+Get the variables in the state.
 """
-variables(state::State) = variables(model(state))
+variables(state::State) = getfield(state, :variables)
 
 """
     variables(state::State, variable::Symbol)
 
 Get the value of the parameter given.
 """
-variables(state::State, variable::Symbol) = variables(model(state), variable)
+variables(state::State, key::Symbol) = getindex(variables(state), key)
 
-variables!(state::State, variable::Symbol, value) = variables!(model(state), variable, value)
+function variables!(state::State, key::Symbol, value)
+    @assert value isa typeof(variables(model, key)) "Tried to update the variable '$key' with a different type than what it was assigned. Must be $(typeof(value))"
+    setindex!(variables(state), value, key)
+end
+
+
+"""
+    arrays(state::State)
+
+Get the pre-allocated arrays in the state.
+"""
+arrays(state::State) = getfield(state, :arrays)
+
+"""
+    arrays(state::State, key::Symbol)
+
+Get the pre-allocated array with the associated key in the state.
+"""
+arrays(state::State, key::Symbol) = getindex(arrays(state), key)
+
+"""
+    arrays(state::State, key::Symbol, player::Int)
+
+Get the pre-allocated array with the associated key and player number.
+"""
+arrays(state::State, key::Symbol, player::Integer) = getindex(arrays(state, key), player)
+
+"""
+    arrays(state::State, key::Symbol, player::Integer, index::Integer)
+
+Get the currently cached value in the pre-allocated array for the given player number and index.
+"""
+arrays(state::State, key::Symbol, player::Integer, index::Integer) = getindex(arrays(state, key, player), index)
+
+"""
+    arrays!(state::State, key::Symbol, player::Integer, index::Integer, value::Integer)
+
+Set the cached value in the pre-allocated array for the given player number and index to value.
+"""
+arrays!(state::State, key::Symbol, player::Integer, index::Integer, value::Real) = setindex!(arrays(state, key, player), value, index)
+
+"""
+    increment_arrays!(state::State, key::Symbol, player_number::Integer, index::Integer, value::Real)
+
+Increment the expected utility for playing the strategy indexed by index for the player indexed by player_number by value.
+"""
+increment_arrays!(state::State, key::Symbol, player_number::Integer, index::Integer, value::Real=1) = arrays!(state, key, player_number, index, arrays(state, key, player_number, index) + value)
+
+
+"""
+    reset_arrays!(state::State)
+
+Reset the cached arrays in the model's pre-allocated arrays to zeros.
+"""
+function reset_arrays!(state::State)
+    for array in values(arrays(state))
+        for player in array
+            fill!(player, 0.0)
+        end
+    end
+    return nothing
+end
 
 
 # """

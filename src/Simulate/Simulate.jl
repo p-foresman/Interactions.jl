@@ -74,7 +74,7 @@ function simulate_supervisor(recipe::Union{Types.Model, Generators.ModelGenerato
     producer, total_jobs = get_producer(recipe, samples)
 
     jobs = RemoteChannel(()->Channel{Types.State}(producer))
-    results = RemoteChannel(()->Channel{Types.State}(nworkers()))
+    results = RemoteChannel(()->Channel{Union{Types.State, Exception}}(nworkers())) #allow this to hold Exceptions for error handling
 
     for worker in workers() #run a _simulate process on each worker
         remote_do(simulate_worker, worker, jobs, results; start_time=start_time, timeout=Interactions.SETTINGS.timeout, capture_interval=Interactions.SETTINGS.capture_interval)
@@ -86,6 +86,7 @@ function simulate_supervisor(recipe::Union{Types.Model, Generators.ModelGenerato
     while num_received < total_jobs
         #push to db if the simulation has completed OR if checkpoint is active in settings. For timeout with checkpoint disabled, data is NOT pushed to a database (currently)
         result_state = take!(results)
+        isa(result_state, Exception) && throw(result_state) #error handling for distributed workers
         simulation_uuid = Database.db_insert_simulation(result_state, result_state.model_id, db_group_id; full_store=!isnothing(Interactions.DATABASE()) ? Interactions.DATABASE().full_store : false) #false doesnt matter here, if there's no database this will return a NoDatabaseError() and nothing will happen
         if Types.iscomplete(result_state)
             num_received += 1
@@ -109,18 +110,11 @@ function simulate_supervisor(recipe::Union{Types.Model, Generators.ModelGenerato
 end
 
 
-function simulate_worker(jobs::RemoteChannel{Channel{Types.State}}, results::RemoteChannel{Channel{Types.State}}; start_time::Float64, timeout::Union{Int, Nothing}=nothing, capture_interval::Union{Int, Nothing}=nothing)
+function simulate_worker(jobs::RemoteChannel{Channel{Types.State}}, results::RemoteChannel{Channel{Union{Types.State, Exception}}}; start_time::Float64, timeout::Union{Int, Nothing}=nothing, capture_interval::Union{Int, Nothing}=nothing)
     local state::Types.State
     while true
         try
             state = take!(jobs)
-        catch e
-            if e.captured.ex isa InvalidStateException #channel is closed, break out of loop and return function
-                break
-            else
-                throw(e)
-            end 
-        else
             stopping_condition_reached = Types.get_enclosed_stopping_condition_fn(state.model)
             Types.restore_rng_state(state)
             
@@ -132,6 +126,12 @@ function simulate_worker(jobs::RemoteChannel{Channel{Types.State}}, results::Rem
                 flush(stdout)
             end
             put!(results, state)
+        catch e
+            if isa(e, InvalidStateException) #channel is closed, break out of loop and return function
+                break
+            else
+                put!(results, e)
+            end 
         end
     end
     return nothing
