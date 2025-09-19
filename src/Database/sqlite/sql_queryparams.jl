@@ -47,7 +47,7 @@ function sql(db_info::Vector{SQLiteInfo}, qp::QueryParams) #for games, parameter
     for db in db_info[2:end]
         union_str *= " UNION ALL " * sql(db, qp, db.name)
     end
-    # distinct = "model_id, game_id, parameters_id, graphmodel_id, game, parameters, graphmodel"
+    # distinct = "model_id, game_id, parameters_id, graphmodel_id, game_bin, parameters, graphmodel"
     # println("SELECT DISTINCT * FROM (" * sql(db_info[1], qp, filter_str, "main") * union_str * ")")
     return  sql(db_info[1], qp) * union_str
 end
@@ -71,7 +71,7 @@ function sql(db_info::SQLiteInfo, qp::Query_models, db_name::String="main")
         models.parameters_id,
         models.graphmodel_id,
         games.name,
-        games.game,
+        games.game_bin,
         parameters.number_agents,
         parameters.memory_length,
         parameters.error,
@@ -159,7 +159,7 @@ function sql(db_info::Vector{SQLiteInfo}, qp::Query_simulations)
     #         models.parameters_id,
     #         models.graphmodel_id,
     #         games.name as game_name,
-    #         games.game,
+    #         games.game_bin,
     #         parameters.number_agents,
     #         parameters.memory_length,
     #         parameters.error,
@@ -206,7 +206,7 @@ function sql_inner(db_info::SQLiteInfo, qp::Query_simulations, db_name::String="
         models.parameters_id,
         models.graphmodel_id,
         games.name as game_name,
-        games.game,
+        games.game_bin,
         parameters.number_agents,
         parameters.memory_length,
         parameters.error,

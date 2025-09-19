@@ -67,6 +67,7 @@ end
 assert_db() = @assert !isnothing(Interactions.DATABASE()) Database.NoDatabaseError()
 
 
+
 include("utility.jl")
 
 #include JSON parsing helper functions
@@ -75,8 +76,11 @@ include("json.jl")
 #include QueryParams types for SQL query generation
 include("queryparams.jl")
 
+#include SQL file loader
+include("load_sql.jl")
+
 # include sqlite and postgresql specific APIs
-include("./sqlite/sql.jl")
+include("./sqlite/execute.jl")
 include("./sqlite/database_api.jl")
 include("./sqlite/sql_queryparams.jl") #NOTE: this ALL needs to be reorganized
 # include("./postgres/database_api.jl")

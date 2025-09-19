@@ -61,6 +61,7 @@ export
 
 #api to sqlite and postgresql functionality
 include("Database/Database.jl")
+export Database
 
 #include Generators
 include("Generators/Generators.jl")

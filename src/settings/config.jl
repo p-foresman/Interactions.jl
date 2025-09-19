@@ -250,7 +250,7 @@ function configure(toml_path::String="")
             print("initializing databse [$(DB_TYPE()).$(MAIN_DB().name)]... ")
             # out = stdout
             # redirect_stdout(devnull)
-            Database.db_init(MAIN_DB()) #;data_script=SETTINGS.data_script) #suppress the stdout stream
+            Database.init(MAIN_DB()) #;data_script=SETTINGS.data_script) #suppress the stdout stream
             #NOTE: add a "state" database table which stores db info like 'initialized' (if initialized is true, dont need to rerun initialization)
             if MAIN_DB() isa Database.SQLiteInfo
                 println("SQLite database file initialized at $(MAIN_DB().filepath)")
@@ -263,7 +263,7 @@ function configure(toml_path::String="")
                 print("verifying attached databse [$(Database.type(attached_db)).$(attached_db.name)]... ")
                 # out = stdout
                 # redirect_stdout(devnull)
-                Database.db_init(attached_db) #;data_script=SETTINGS.data_script) #suppress the stdout stream
+                Database.init(attached_db) #;data_script=SETTINGS.data_script) #suppress the stdout stream
                 #NOTE: add a "state" database table which stores db info like 'initialized' (if initialized is true, dont need to rerun initialization)
                 if MAIN_DB() isa Database.SQLiteInfo #NOTE: is this necessary?
                     println("SQLite database file verified at $(attached_db)")
@@ -275,7 +275,7 @@ function configure(toml_path::String="")
             # if !isnothing(SETTINGS.checkpoint) && SETTINGS.checkpoint.database != SETTINGS.database
             #     print("initializing checkpoint databse [$(db_type(SETTINGS.checkpoint.database)).$(SETTINGS.checkpoint.database.name)]... ")
 
-            #     db_init(SETTINGS.checkpoint.database)
+            #     init(SETTINGS.checkpoint.database)
 
             #     if SETTINGS.checkpoint.database isa Database.SQLiteInfo
             #         println("SQLite database file initialized at $(SETTINGS.checkpoint.database.filepath)")

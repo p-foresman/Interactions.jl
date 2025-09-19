@@ -12,6 +12,7 @@ db_begin_transaction(db::SQLiteDB) = SQLite.transaction(db) #does have a default
 db_execute(db::SQLiteDB, sql::SQL) = DBInterface.execute(db, sql)
 db_execute(db::SQLiteDB, sql::SQL, params) = DBInterface.execute(db, sql, params)
 db_query(db::SQLiteDB, sql::SQL) = DataFrame(db_execute(db, sql))
+db_query(db::SQLiteDB, sql::SQL, params) = DataFrame(db_execute(db, sql, params))
 db_commit_transaction(db::SQLiteDB) = SQLite.commit(db)
 db_close(db::SQLiteDB) = SQLite.close(db)
 
@@ -103,15 +104,16 @@ function sql_create_games_table(::SQLiteInfo)
     (
         id INTEGER PRIMARY KEY,
         name TEXT NOT NULL,
-        game TEXT NOT NULL,
         payoff_matrix_size TEXT NOT NULL,
-        UNIQUE(name, game)
+        interaction TEXT NOT NULL,
+        game_bin BLOB NOT NULL,
+        UNIQUE(name, game_bin)
     );
     """
 end
 
 
-function sql_create_graphmodels_table(::SQLiteInfo)
+function sql_create_graphmodels_table(::SQLiteInfo) #acts as a junction table which defines the actual graph model for the 
     """
     CREATE TABLE IF NOT EXISTS graphmodels
     (
@@ -143,21 +145,21 @@ function sql_create_graphmodel_parameters_table(::SQLiteInfo)
     """
 end
 
-function sql_create_parameters_table(::SQLiteInfo)
-    """
-    CREATE TABLE IF NOT EXISTS parameters
-    (
-        id INTEGER PRIMARY KEY,
-        number_agents INTEGER NOT NULL,
-        memory_length INTEGER NOT NULL,
-        error REAL NOT NULL,
-        starting_condition TEXT NOT NULL,
-        stopping_condition TEXT NOT NULL,
-        parameters TEXT NOT NULL,
-        UNIQUE(parameters)
-    );
-    """
-end
+# function sql_create_parameters_table(::SQLiteInfo)
+#     """
+#     CREATE TABLE IF NOT EXISTS parameters
+#     (
+#         id INTEGER PRIMARY KEY,
+#         number_agents INTEGER NOT NULL,
+#         memory_length INTEGER NOT NULL,
+#         error REAL NOT NULL,
+#         starting_condition TEXT NOT NULL,
+#         stopping_condition TEXT NOT NULL,
+#         parameters TEXT NOT NULL,
+#         UNIQUE(parameters)
+#     );
+#     """
+# end
 
 
 function sql_create_models_table(::SQLiteInfo)
@@ -165,11 +167,18 @@ function sql_create_models_table(::SQLiteInfo)
     CREATE TABLE IF NOT EXISTS models
     (
         id INTEGER PRIMARY KEY,
+        agent_type TEXT NOT NULL,
+        population_size INTEGER NOT NULL,
         game_id INTEGER NOT NULL,
         graphmodel_id INTEGER NOT NULL,
-        parameters_id INTEGER NOT NULL,
+        starting_condition TEXT NOT NULL,
+        stopping_condition TEXT NOT NULL,
+        parameters TEXT NOT NULL,
+        variables TEXT NOT NULL,
+        arrays TEXT NOT NULL,
+
         FOREIGN KEY (game_id)
-            REFERENCES games (game_id)
+            REFERENCES games (id)
             ON DELETE CASCADE,
         FOREIGN KEY (graphmodel_id)
             REFERENCES graphmodels (id)
@@ -177,10 +186,42 @@ function sql_create_models_table(::SQLiteInfo)
         FOREIGN KEY (parameters_id)
             REFERENCES parameters (id)
             ON DELETE CASCADE,
-        UNIQUE(game_id, graphmodel_id, parameters_id)
+        UNIQUE(agent_type, population_size, game_id, graphmodel_id, starting_condition, stopping_condition, parameters_id, variables, arrays)
     );
     """
 end
+
+
+function sql_create_parameters_table(::SQLiteInfo)
+    """
+    CREATE TABLE IF NOT EXISTS parameters
+    (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL,
+        value REAL NOT NULL,
+        UNIQUE(name, value)
+    );
+    """
+end
+
+function sql_create_model_parameters_table(::SQLiteInfo) #junction table to allow querying based on parameter name/value
+    """
+    CREATE TABLE IF NOT EXISTS model_parameters
+    (
+        model_id INT,
+        parameter_id INT,
+        PRIMARY KEY (model_id, parameter_id),
+        FOREIGN KEY (model_id)
+            REFERENCES models (id)
+            ON DELETE RESTRICT,
+        FOREIGN KEY (parameter_id)
+            REFERENCES parameters (id)
+            ON DELETE RESTRICT
+    );
+    """
+end
+
+
 
 function sql_create_groups_table(::SQLiteInfo)
     """
@@ -225,38 +266,20 @@ end
 function execute_init_db(db_info::SQLiteInfo)
     db = DB(db_info)
     db_begin_transaction(db)
+    db_execute(db, sqlite_map["create"]["games"])
     db_execute(db, sql_create_games_table(db_info))
     db_execute(db, sql_create_graphmodels_table(db_info))
     db_execute(db, sql_create_graphmodel_parameters_table(db_info))
-    db_execute(db, sql_create_parameters_table(db_info))
+    # db_execute(db, sql_create_parameters_table(db_info))
     db_execute(db, sql_create_models_table(db_info))
+    db_execute(db, sql_create_parameters_table(db_info))
+    db_execute(db, sql_create_model_parameters_table(db_info))
     db_execute(db, sql_create_groups_table(db_info))
     db_execute(db, sql_create_simulations_table(db_info))
     db_commit_transaction(db)
     db_close(db)
 end
 
-
-
-function sql_insert_game(name::String, game_str::String, payoff_matrix_size::String)
-    """
-    INSERT OR IGNORE INTO games
-    (
-        name,
-        game,
-        payoff_matrix_size
-    )
-    VALUES
-    (
-        '$name',
-        '$game_str',
-        '$payoff_matrix_size'
-    )
-    ON CONFLICT (name, game) DO UPDATE
-        SET name = games.name
-    RETURNING id;
-    """
-end
 
 function sql_insert_graphmodel(name::String, display::String, params::String, kwargs::String)
     """
@@ -302,31 +325,31 @@ function sql_insert_graphmodel_parameter(graphmodel_id::Integer, name::String, t
     """
 end
 
-function sql_insert_parameters(params::Types.Parameters, parameters_str::String) #NOTE: params should be broken up before this so we dont have to use Interactions functions*** (everything else is)
-    """
-    INSERT OR IGNORE INTO parameters
-    (
-        number_agents,
-        memory_length,
-        error,
-        starting_condition,
-        stopping_condition,
-        parameters
-    )
-    VALUES
-    (
-        $(Types.number_agents(params)),
-        $(Types.memory_length(params)),
-        $(Types.error_rate(params)),
-        '$(Types.starting_condition_fn_name(params))',
-        '$(Types.stopping_condition_fn_name(params))',
-        '$parameters_str'
-    )
-    ON CONFLICT (parameters) DO UPDATE
-        SET number_agents = parameters.number_agents
-    RETURNING id;
-    """
-end
+# function sql_insert_parameters(params::Types.Parameters, parameters_str::String) #NOTE: params should be broken up before this so we dont have to use Interactions functions*** (everything else is)
+#     """
+#     INSERT OR IGNORE INTO parameters
+#     (
+#         number_agents,
+#         memory_length,
+#         error,
+#         starting_condition,
+#         stopping_condition,
+#         parameters
+#     )
+#     VALUES
+#     (
+#         $(Types.number_agents(params)),
+#         $(Types.memory_length(params)),
+#         $(Types.error_rate(params)),
+#         '$(Types.starting_condition_fn_name(params))',
+#         '$(Types.stopping_condition_fn_name(params))',
+#         '$parameters_str'
+#     )
+#     ON CONFLICT (parameters) DO UPDATE
+#         SET number_agents = parameters.number_agents
+#     RETURNING id;
+#     """
+# end
 
 
 function sql_insert_model(game_id::Integer, graphmodel_id::Integer, parameters_id::Integer; model_id::Union{Nothing, Integer}=nothing)
@@ -351,8 +374,15 @@ function sql_insert_model(game_id::Integer, graphmodel_id::Integer, parameters_i
     """ 
 end
 
-function execute_insert_game(db::SQLiteDB, name::String, game_str::String, payoff_matrix_size::String)
-    id::Int = db_query(db, sql_insert_game(name, game_str, payoff_matrix_size))[1, :id]
+
+#NOTE: can abstract functionality using something like this
+# function insert(db::SQLiteDB, table::String, values...)
+#     id::Int = db_query(db, sqlite_map["insert"][table], (values))[1, :id]
+#     return id
+# end
+
+function execute_insert_game(db::SQLiteDB, name::String, payoff_matrix_size::String, interaction::String, game_bin::BLOB)
+    id::Int = db_query(db, sqlite_map["insert"]["game"], (name, payoff_matrix_size, interaction, game_bin))[1, :id]
     return id
 end
 
@@ -452,7 +482,7 @@ function execute_insert_simulation(db_info::SQLiteInfo,
                                     complete::Integer,
                                     user_variables::String,
                                     data::String,
-                                    state_bin::Union{Vector{UInt8}, Nothing}) #state_bin will be nothing if store_state=false in config
+                                    state_bin::Union{BLOB, Nothing}) #state_bin will be nothing if store_state=false in config
                                     
     uuid = "$(uuid4())"
 
@@ -472,7 +502,7 @@ function sql_query_models(model_id::Integer)
         models.id,
         parameters.parameters,
         graphmodels.graphmodel,
-        games.game,
+        games.game_bin,
         games.payoff_matrix_size
     FROM models
     INNER JOIN games ON models.game_id = games.id
@@ -490,7 +520,7 @@ function sql_query_simulations(simulation_uuid::String)
         simulations.model_id,
         simulations.state_bin,
         parameters.parameters,
-        games.game,
+        games.game_bin,
         games.payoff_matrix_size,
         graphmodels.graphmodel,
         simulations.group_id,
@@ -571,7 +601,7 @@ function execute_merge_full(db_info_master::SQLiteInfo, db_info_merger::SQLiteIn
     db = DB(db_info_master)
     db = DB(db_info; busy_timeout=5000)
     db_execute(db, "ATTACH DATABASE '$(db_info_merger.filepath)' as merge_db;")
-    db_execute(db, "INSERT OR IGNORE INTO games(game_name, game, payoff_matrix_size) SELECT game_name, game, payoff_matrix_size FROM merge_db.games;")
+    db_execute(db, "INSERT OR IGNORE INTO games(game_name, game_bin, payoff_matrix_size) SELECT game_name, game_bin, payoff_matrix_size FROM merge_db.games;")
     db_execute(db, "INSERT OR IGNORE INTO graphmodels(graph, graph_type, graph_params, λ, β, α, blocks, p_in, p_out) SELECT graph, graph_type, graph_params, λ, β, α, blocks, p_in, p_out FROM merge_db.graphmodels;")
     db_execute(db, "INSERT OR IGNORE INTO parameters(number_agents, memory_length, error, parameters) SELECT number_agents, memory_length, error, parameters FROM merge_db.parameters;")
     db_execute(db, "INSERT OR IGNORE INTO starting_conditions(name, starting_condition) SELECT name, starting_condition FROM merge_db.starting_conditions;")

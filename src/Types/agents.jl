@@ -1,5 +1,5 @@
 const Choice = Int8
-const Percept = Int8 #Int8 to save memory?
+const Percept = Int8 #NOTE: change to Int
 const PerceptSequence = Vector{Percept}
 const TaggedPercept = Tuple{Symbol, Int8}
 const TaggedPerceptSequence = Vector{TaggedPercept}

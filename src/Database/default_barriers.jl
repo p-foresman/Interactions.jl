@@ -22,82 +22,82 @@ sql(::Nothing, ::QueryParams) = NoDatabaseError()
 
 
 """
-    db_execute(sql::SQL)
+    execute(sql::SQL)
 
 Execute SQL (String) on the configured database.
 """
-db_execute(sql::SQL) = db_execute(Interactions.MAIN_DB(), sql)
-db_execute(::Nothing, ::SQL) = NoDatabaseError()
+execute(sql::SQL) = execute(Interactions.MAIN_DB(), sql)
+execute(::Nothing, ::SQL) = NoDatabaseError()
 
 """
-    db_query(sql::SQL)
+    query(sql::SQL)
 
 Query the configured database using the SQL (String) provided. Returns a DataFrame containing results.
 """
-db_query(sql::SQL) = db_query(Interactions.DATABASE(), sql)
-db_query(::Nothing, ::SQL) = NoDatabaseError()
-# function db_query(sql::SQL)
+query(sql::SQL) = query(Interactions.DATABASE(), sql)
+query(::Nothing, ::SQL) = NoDatabaseError()
+# function query(sql::SQL)
 #     if isempty(Interactions.SETTINGS.query)
-#         return db_query(Interactions.SETTINGS.database, sql)
+#         return query(Interactions.SETTINGS.database, sql)
 #     else
-#         return db_query(Interactions.SETTINGS.query, sql)
+#         return query(Interactions.SETTINGS.query, sql)
 #     end
 # end
 
 
 """
-    db_query(qp::QueryParams)
+    query(qp::QueryParams)
 
 Query the configured database and attached databases using the QueryParams provided. Returns a DataFrame containing results.
 """
-db_query(qp::QueryParams; kwargs...) = db_query(Interactions.DATABASE(), qp; kwargs...)
-db_query(::Nothing, ::QueryParams) = NoDatabaseError()
+query(qp::QueryParams; kwargs...) = query(Interactions.DATABASE(), qp; kwargs...)
+query(::Nothing, ::QueryParams) = NoDatabaseError()
 
-#db_query(qp::Query_simulations; ensure_samples::Bool=false) = db_query(Interactions.DATABASE(), qp; ensure_samples=ensure_samples)
+#query(qp::Query_simulations; ensure_samples::Bool=false) = query(Interactions.DATABASE(), qp; ensure_samples=ensure_samples)
 
-db_query_timeseries(simulation_uuid::String, limit::Int) = db_query_timeseries(Interactions.DATABASE(), simulation_uuid, limit)
+query_timeseries(simulation_uuid::String, limit::Int) = query_timeseries(Interactions.DATABASE(), simulation_uuid, limit)
 
-# db_begin_transaction() = db_begin_transaction(Interactions.SETTINGS.database)
-# db_close(db::SQLiteDB) = SQLite.close(db)
-# db_commit_transaction(db::SQLiteDB) = SQLite.commit(db)
+# begin_transaction() = begin_transaction(Interactions.SETTINGS.database)
+# close(db::SQLiteDB) = SQLite.close(db)
+# commit_transaction(db::SQLiteDB) = SQLite.commit(db)
 
-db_init() = db_init(Interactions.MAIN_DB())
-db_init(::Nothing) = NoDatabaseError()
-
-
-db_insert_sim_group(description::String) = db_insert_sim_group(Interactions.MAIN_DB(), description)
-db_insert_sim_group(::Nothing, ::String) = NoDatabaseError()
-
-db_insert_game(game::Types.Game) = db_insert_game(Interactions.MAIN_DB(), game)
-db_insert_game(::Nothing, ::Types.Game) = NoDatabaseError()
-
-db_insert_graphmodel(graphmodel::Types.GraphModel) = db_insert_graphmodel(Interactions.MAIN_DB(), graphmodel)
-db_insert_graphmodel(::Nothing, ::Types.GraphModel) = NoDatabaseError()
-
-db_insert_parameters(params::Types.Parameters, use_seed::Bool) = db_insert_parameters(Interactions.MAIN_DB(), params, use_seed)
-db_insert_parameters(::Nothing, ::Types.Parameters, ::Bool) = NoDatabaseError()
+init() = init(Interactions.MAIN_DB())
+init(::Nothing) = NoDatabaseError()
 
 
-db_insert_model(model::Types.Model; model_id::Union{Nothing, Integer}=nothing) = db_insert_model(Interactions.MAIN_DB(), model; model_id=model_id) #returns model_id::Int
-db_insert_model(::Nothing, ::Types.Model; kwargs...) = NoDatabaseError() #NOTE: return nothing here instead of model_id since no database is configured. (do we want NoDatabaseError() instead?) could make custom NoDB type to return!
-# db_try_insert_model(model::Model; model_id::Union{Nothing, Integer}=nothing) = db_insert_model(Interactions.MAIN_DB(), model, model_id=model_id)
+insert_sim_group(description::String) = insert_sim_group(Interactions.MAIN_DB(), description)
+insert_sim_group(::Nothing, ::String) = NoDatabaseError()
 
-db_insert_simulation(state::Types.State, model_id::Union{Integer, Nothing}, sim_group_id::Union{Integer, Nothing} = nothing; full_store::Bool=true) = db_insert_simulation(Interactions.MAIN_DB(), state, model_id, sim_group_id; full_store=full_store)
-db_insert_simulation(::Nothing, args...; kwargs...) = NoDatabaseError()
+insert_game(game::Types.Game) = insert_game(Interactions.MAIN_DB(), game)
+insert_game(::Nothing, ::Types.Game) = NoDatabaseError()
 
-db_has_incomplete_simulations() = db_has_incomplete_simulations(Interactions.MAIN_DB())
-db_has_incomplete_simulations(::Nothing) = NoDatabaseError()
+insert_graphmodel(graphmodel::Types.GraphModel) = insert_graphmodel(Interactions.MAIN_DB(), graphmodel)
+insert_graphmodel(::Nothing, ::Types.GraphModel) = NoDatabaseError()
 
-db_get_incomplete_simulation_uuids() = db_get_incomplete_simulation_uuids(Interactions.MAIN_DB())
-db_get_incomplete_simulation_uuids(::Nothing) = NoDatabaseError()
-
-
-db_collect_temp(directory_path::String; kwargs...) = db_collect_temp(Interactions.MAIN_DB(), directory_path; kwargs...)
-db_collect_temp(::Nothing, ::String) = NoDatabaseError()
+insert_parameters(params::Types.Parameters, use_seed::Bool) = insert_parameters(Interactions.MAIN_DB(), params, use_seed)
+insert_parameters(::Nothing, ::Types.Parameters, ::Bool) = NoDatabaseError()
 
 
-db_reconstruct_model(model_id::Integer) = db_reconstruct_model(Interactions.MAIN_DB(), model_id) #NOTE: want to have this search through all attached dbs
-db_reconstruct_model(::Nothing, ::Integer) = NoDatabaseError()
+insert_model(model::Types.Model; model_id::Union{Nothing, Integer}=nothing) = insert_model(Interactions.MAIN_DB(), model; model_id=model_id) #returns model_id::Int
+insert_model(::Nothing, ::Types.Model; kwargs...) = NoDatabaseError() #NOTE: return nothing here instead of model_id since no database is configured. (do we want NoDatabaseError() instead?) could make custom NoDB type to return!
+# try_insert_model(model::Model; model_id::Union{Nothing, Integer}=nothing) = insert_model(Interactions.MAIN_DB(), model, model_id=model_id)
 
-db_reconstruct_simulation(uuid::String) = db_reconstruct_simulation(Interactions.MAIN_DB(), uuid)
-db_reconstruct_simulation(::Nothing, ::String) = NoDatabaseError()
+insert_simulation(state::Types.State, model_id::Union{Integer, Nothing}, sim_group_id::Union{Integer, Nothing} = nothing; full_store::Bool=true) = insert_simulation(Interactions.MAIN_DB(), state, model_id, sim_group_id; full_store=full_store)
+insert_simulation(::Nothing, args...; kwargs...) = NoDatabaseError()
+
+has_incomplete_simulations() = has_incomplete_simulations(Interactions.MAIN_DB())
+has_incomplete_simulations(::Nothing) = NoDatabaseError()
+
+get_incomplete_simulation_uuids() = get_incomplete_simulation_uuids(Interactions.MAIN_DB())
+get_incomplete_simulation_uuids(::Nothing) = NoDatabaseError()
+
+
+collect_temp(directory_path::String; kwargs...) = collect_temp(Interactions.MAIN_DB(), directory_path; kwargs...)
+collect_temp(::Nothing, ::String) = NoDatabaseError()
+
+
+reconstruct_model(model_id::Integer) = reconstruct_model(Interactions.MAIN_DB(), model_id) #NOTE: want to have this search through all attached dbs
+reconstruct_model(::Nothing, ::Integer) = NoDatabaseError()
+
+reconstruct_simulation(uuid::String) = reconstruct_simulation(Interactions.MAIN_DB(), uuid)
+reconstruct_simulation(::Nothing, ::String) = NoDatabaseError()

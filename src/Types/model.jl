@@ -16,7 +16,7 @@ E = number of relationships/edges
 struct Model{S1, S2, L, A<:AbstractAgent} #, GM <: GraphModel}
     # id::Union{Nothing, Int}
     agent_type::Type{A}
-    population_size::Int
+    population_size::Int #NOTE: population_size could be a requiured parameter in 'parameters' with a default value. Could in theory be updated?
     # population::Tuple{Type{A}, Int} # (agent_type, population_size) --- sticking with one agent type for now, in the future could store a vector of population tuples which describe the population makeup
     # population::Dict{DataType, Int} #NOTE: could do this for heterogeneous population!
     game::Game{S1, S2, L}

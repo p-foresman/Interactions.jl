@@ -37,13 +37,13 @@ Note: a database must be configured to use this method and a model with the give
 
 function simulate(model_id::Integer; kwargs...)
     Database.assert_db()
-    model = Database.db_reconstruct_model(model_id) #construct model associated with id
+    model = Database.reconstruct_model(model_id) #construct model associated with id
     return simulate_supervisor(model; kwargs..., start_time=time())
 end
 
 function simulate(model::Types.Model, model_id::Int; kwargs...) #NOTE: potentially dangerous method that could screw up database integrity
     @assert !isnothing(Interactions.DATABASE()) Database.NoDatabaseError()
-    Database.db_insert_model(model; model_id=model_id)
+    Database.insert_model(model; model_id=model_id)
     return simulate_supervisor(model; kwargs..., start_time=time())
 end
 
@@ -53,17 +53,17 @@ simulate(generator::Generators.ModelGeneratorSet; kwargs...) = simulate_supervis
 
 function simulate(simulation_uuid::String; kwargs...)
     Database.assert_db()
-    model_state::Tuple{Types.Model, Types.State} = Database.db_reconstruct_simulation(simulation_uuid) #NOTE: model needs to be consumed by state!
+    model_state::Tuple{Types.Model, Types.State} = Database.reconstruct_simulation(simulation_uuid) #NOTE: model needs to be consumed by state!
     return simulate_supervisor(model_state; kwargs..., start_time=time())
 end
 
 function simulate(;kwargs...) #NOTE: probably don't want this method for simulation continuation
     Database.assert_db()
-    simulation_uuids = Database.db_get_incomplete_simulation_uuids()
+    simulation_uuids = Database.get_incomplete_simulation_uuids()
     # println(simulation_uuids)
     model_state_tuples = Vector{Tuple{Types.Model, Types.State}}() #NOTE: model needs to be consumed by state!
     for simulation_uuid in simulation_uuids
-        push!(model_state_tuples, Database.db_reconstruct_simulation(simulation_uuid))
+        push!(model_state_tuples, Database.reconstruct_simulation(simulation_uuid))
     end
 
     return simulate_supervisor(model_state_tuples; kwargs..., start_time=time())
@@ -87,7 +87,7 @@ function simulate_supervisor(recipe::Union{Types.Model, Generators.ModelGenerato
         #push to db if the simulation has completed OR if checkpoint is active in settings. For timeout with checkpoint disabled, data is NOT pushed to a database (currently)
         result_state = take!(results)
         isa(result_state, Exception) && throw(result_state) #error handling for distributed workers
-        simulation_uuid = Database.db_insert_simulation(result_state, result_state.model_id, db_group_id; full_store=!isnothing(Interactions.DATABASE()) ? Interactions.DATABASE().full_store : false) #false doesnt matter here, if there's no database this will return a NoDatabaseError() and nothing will happen
+        simulation_uuid = Database.insert_simulation(result_state, result_state.model_id, db_group_id; full_store=!isnothing(Interactions.DATABASE()) ? Interactions.DATABASE().full_store : false) #false doesnt matter here, if there's no database this will return a NoDatabaseError() and nothing will happen
         if Types.iscomplete(result_state)
             num_received += 1
             num_completed += 1
