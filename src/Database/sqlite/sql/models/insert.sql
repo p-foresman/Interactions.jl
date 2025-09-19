@@ -1,11 +1,15 @@
 INSERT OR IGNORE INTO models
 (
     id,
+    agent_type,
+    population_size,
     game_id,
     graphmodel_id,
-    parameters_id
+    starting_condition,
+    stopping_condition,
+    model_bin
 )
 VALUES (?, ?, ?, ?)
-ON CONFLICT (game_id, graphmodel_id, parameters_id) DO UPDATE
-    SET game_id = models.game_id
+ON CONFLICT (model_bin) DO UPDATE
+    SET agent_type = models.agent_type
 RETURNING id;

@@ -64,6 +64,16 @@ struct NoDatabaseError <: Exception
     NoDatabaseError() = new("no database is configured!")
 end
 
+"""
+    NotFoundError
+
+Type used to for error handling to signal that the queried item was not found.
+"""
+struct NotFoundError <: Exception
+    message::String
+    NotFoundError() = new("Item was not found in the configured database.")
+end
+
 assert_db() = @assert !isnothing(Interactions.DATABASE()) Database.NoDatabaseError()
 
 

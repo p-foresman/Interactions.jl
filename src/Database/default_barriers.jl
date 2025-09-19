@@ -65,18 +65,14 @@ init() = init(Interactions.MAIN_DB())
 init(::Nothing) = NoDatabaseError()
 
 
-insert_sim_group(description::String) = insert_sim_group(Interactions.MAIN_DB(), description)
-insert_sim_group(::Nothing, ::String) = NoDatabaseError()
+insert_group(description::String) = insert_group(Interactions.MAIN_DB(), description)
+insert_group(::Nothing, ::String) = NoDatabaseError()
 
 insert_game(game::Types.Game) = insert_game(Interactions.MAIN_DB(), game)
 insert_game(::Nothing, ::Types.Game) = NoDatabaseError()
 
 insert_graphmodel(graphmodel::Types.GraphModel) = insert_graphmodel(Interactions.MAIN_DB(), graphmodel)
 insert_graphmodel(::Nothing, ::Types.GraphModel) = NoDatabaseError()
-
-insert_parameters(params::Types.Parameters, use_seed::Bool) = insert_parameters(Interactions.MAIN_DB(), params, use_seed)
-insert_parameters(::Nothing, ::Types.Parameters, ::Bool) = NoDatabaseError()
-
 
 insert_model(model::Types.Model; model_id::Union{Nothing, Integer}=nothing) = insert_model(Interactions.MAIN_DB(), model; model_id=model_id) #returns model_id::Int
 insert_model(::Nothing, ::Types.Model; kwargs...) = NoDatabaseError() #NOTE: return nothing here instead of model_id since no database is configured. (do we want NoDatabaseError() instead?) could make custom NoDB type to return!

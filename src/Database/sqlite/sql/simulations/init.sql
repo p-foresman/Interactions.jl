@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS simulations
     model_id INTEGER NOT NULL,
     period INTEGER NOT NULL,
     complete BOOLEAN NOT NULL,
-    user_variables TEXT NOT NULL,
+    timedout BOOLEAN NOT NULL,
     data TEXT DEFAULT '{}' NOT NULL,
     state_bin BLOB DEFAULT NULL,
     FOREIGN KEY (group_id)
@@ -17,5 +17,6 @@ CREATE TABLE IF NOT EXISTS simulations
     FOREIGN KEY (model_id)
         REFERENCES models (id),
     UNIQUE(uuid),
-    CHECK (complete in (0, 1))
+    CHECK (complete in (0, 1)),
+    CHECK (timedout in (0, 1))
 );

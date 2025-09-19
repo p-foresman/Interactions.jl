@@ -39,6 +39,15 @@ function get_producer(generator::Union{Generators.ModelGenerator, Generators.Mod
     return (producer, generator.size * samples)
 end
 
+function get_producer(state::Types.State, samples::Integer)
+    function producer(channel::Channel)
+        for _ in 1:samples
+            put!(channel, state)
+        end
+    end
+    return (producer, samples)
+end
+
 function get_producer(states::Vector{Types.State}, samples::Integer)
     function producer(channel::Channel)
         for s in states

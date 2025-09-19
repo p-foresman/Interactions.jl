@@ -9,10 +9,8 @@ const SQL_CACHE = Dict{String, String}() #cache to store SQL statements to reduc
 Loads and caches the content of an SQL file.
 The file is read from disk on the first call and cached for subsequent calls.
 """
-function load_sql_file(db_type::String, file::String) #NOTE: could make this more efficient
-    @assert in(db_type, ["sqlite", "postgres"]) "The db_type given must be either 'sqlite' or 'postgres'."
-
-    filepath = joinpath(@__DIR__, db_type, "sql", file)
+function load_sql_file(file::String) #NOTE: could make this more efficient
+    filepath = joinpath(@__DIR__, file)
     @assert isfile(filepath) "The filepath given does not correspond to an existing file."
     @assert splitext(filepath)[2] == ".sql" "The filepath given does not correspond to a .sql file."
 

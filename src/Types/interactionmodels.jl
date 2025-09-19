@@ -40,8 +40,8 @@ end
     
 fn_name(graphmodel::GraphModel) = getfield(graphmodel, :fn_name)
 fn(graphmodel::GraphModel) = getfield(Registry.GraphModels, Symbol(fn_name(graphmodel)))
-params(graphmodel::GraphModel) = getfield(graphmodel, :params)
-args(graphmodel::GraphModel) = values(params(graphmodel))
+parameters(graphmodel::GraphModel) = getfield(graphmodel, :params)
+args(graphmodel::GraphModel) = values(parameters(graphmodel))
 kwargs(graphmodel::GraphModel) = getfield(graphmodel, :kwargs)
 
 # const _graphmodel_fn_registry = Vector{Expr}()
@@ -62,7 +62,7 @@ kwargs(graphmodel::GraphModel) = getfield(graphmodel, :kwargs)
 
 Get the string used for displaying a GraphModel instance.
 """
-displayname(graphmodel::GraphModel) = "$(fn_name(graphmodel))$(isempty(params(graphmodel)) ? "" : " $(params(graphmodel))")"
+displayname(graphmodel::GraphModel) = "$(fn_name(graphmodel))$(isempty(parameters(graphmodel)) ? "" : " $(parameters(graphmodel))")"
 Base.show(graphmodel::GraphModel) = println(displayname(graphmodel))
 
 #NOTE: probably do want this here, but want it to be self contained to GraphModel?

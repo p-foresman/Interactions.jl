@@ -106,197 +106,204 @@ function query(db_info::Union{SQLiteInfo, Vector{SQLiteInfo}, DatabaseSettings{S
 end
 
 
-
-function init(db_info::SQLiteInfo)
+function init(db::SQLiteDB)
     mkpath(dirname(db_info.filepath)) #create the directory path if it doesn't already exist
 
-    db = DB(db_info)
     begin_transaction(db)
-    execute(db, load_sql_file(db_info, "games/init.sql"))
-    execute(db, load_sql_file(db_info, "graphmodels/init.sql"))
-    execute(db, load_sql_file(db_info, "graphmodels/graphmodel_parameters/init.sql"))
-    execute(db, load_sql_file(db_info, "models/init.sql"))
-    execute(db, load_sql_file(db_info, "models/model_parameters/init.sql"))
-    execute(db, load_sql_file(db_info, "groups/init.sql"))
-    execute(db, load_sql_file(db_info, "simulations/init.sql"))
+    execute(db, load_sql_file("sqlite/sql/games/init.sql"))
+    execute(db, load_sql_file("sqlite/sql/graphmodels/init.sql"))
+    execute(db, load_sql_file("sqlite/sql/graphmodels/graphmodel_parameters/init.sql"))
+    execute(db, load_sql_file("sqlite/sql/models/init.sql"))
+    execute(db, load_sql_file("sqlite/sql/models/model_parameters/init.sql"))
+    execute(db, load_sql_file("sqlite/sql/groups/init.sql"))
+    execute(db, load_sql_file("sqlite/sql/simulations/init.sql"))
     commit_transaction(db)
+end
+
+function init(db_info::SQLiteInfo)
+    db = DB(db_info)
+    init(db)
     close(db)
 end
 
+
+#NOTE: can probably reduce each to one function (don't need a funtion for SQLiteDB and SQLiteInfo)
+function insert_game(db::SQLiteDB, game::Types.Game)
+    id::Int = query(db, load_sql_file("sqlite/sql/games/insert.sql"), (name(game), string(size(game)), Types.interaction_fn_name(game), serialize_to_vec(game)))[1, :id]
+    return id
+end
 
 function insert_game(db_info::SQLiteInfo, game::Types.Game)
-    id::Int = query(db_info, load_sql_file(db_info, "games/insert.sql"), (name(game), string(size(game)), Types.interaction_fn_name(game), serialize_to_vec(game)))[1, :id]
-    return id
-end
-
-
-function insert_graphmodel(db_info::SQLiteInfo, graphmodel::Types.GraphModel)
-    id::Int = query(db_info, load_sql_file(db_info, "graphmodels/insert.sql"), (Types.fn_name(graphmodel), Types.displayname(graphmodel), serialize_to_vec(graphmodel)))[1, :id]
-    for (param, val) in pairs(Types.params(graphmodel))
-        insert_graphmodel_parameter(db, id, string(param), string(typeof(val)), string(val))
-    end
-    return id
-end
-
-
-function insert_graphmodel_parameter(db::SQLitreInfo, graphmodel_id::Integer, name::String, type::String, value::String)
-    id::Int = query(db, sql_insert_graphmodel_parameter(graphmodel_id, name, type, value))[1, :id]
-    return id
-end
-
-
-
-function insert_model(db_info::SQLiteInfo,
-                            game_name::String, game_str::String, payoff_matrix_size::String,
-                            graphmodel_name::String, graphmodel_display::String, graphmodel_kwargs::String, graphmodel_params::NamedTuple, #NOTE: should try to make all parameters String typed so they can be plugged right into sql
-                            params::Types.Parameters, parameters_str::String;
-                            model_id::Union{Nothing, Integer}=nothing)
-
-
     db = DB(db_info)
-    begin_transaction(db)
-    game_id = insert_game(db, game_name, game_str, payoff_matrix_size)
-    graphmodel_id = insert_graphmodel(db, graphmodel_name, graphmodel_display, graphmodel_kwargs, graphmodel_params)
-    parameters_id = insert_parameters(db, params, parameters_str)
-    # startingcondition_id = insert_startingcondition(db, startingcondition_type, startingcondition_str)
-    # stoppingcondition_id = insert_stoppingcondition(db, stoppingcondition_type, stoppingcondition_str)
-    # id = insert_model(db, game_id, graphmodel_id, parameters_id, startingcondition_id, stoppingcondition_id)
-    id::Int = query(db, load_sql_file(db_info, "models/insert.sql"), (model_id, game_id, graphmodel_id, parameters_id))[1, :id]
-    commit_transaction(db)
+    id = insert_game(db, game)
     close(db)
     return id
 end
 
 
-function insert_model_parameter(db::SQLitreInfo, params::Types.Parameters, parameters_str::String)
-    id::Int = query(db, sql_insert_parameters(params, parameters_str))[1, :id]
+function insert_graphmodel(db::SQLiteDB, graphmodel::Types.GraphModel)
+    begin_transaction(db)
+    
+    #insert graphmodel
+    graphmodel_id::Int = query(db, load_sql_file("sqlite/sql/graphmodels/insert.sql"), (Types.fn_name(graphmodel), Types.displayname(graphmodel), serialize_to_vec(graphmodel)))[1, :id]
+    
+    #insert each graphmodel parameter referencing the previously inserted graphmodel
+    for (param, val) in pairs(Types.parameters(graphmodel))
+        execute(db, load_sql_file("sqlite/sql/graphmodels/graphmodel_parameters/insert.sql"), (graphmodel_id, string(param), string(typeof(val)), string(val)))
+    end
+
+    commit_transaction(db)
+    return id
+end
+
+function insert_graphmodel(db_info::SQLiteInfo, graphmodel::Types.GraphModel)
+    db = DB(db_info)
+    id = insert_graphmodel(db, graphmodel)
+    close(db)
+    return id
+end
+
+function insert_model(db::SQLiteDB, model::Types.Model; model_id::Union{Nothing, Integer}=nothing)
+    begin_transaction(db)
+
+    #insert game
+    game_id = insert_game(db, Types.game(model))
+
+    #insert graphmodel
+    graphmodel_id = insert_graphmodel(db, Types.graphmodel(model))
+
+    #insert model referencing game and graphmodel
+    model_id::Int = query(db,
+        load_sql_file("sqlite/sql/models/insert.sql"),
+        (
+            model_id,
+            string(Types.agent_type(model)),
+            Types.population_size(model),
+            game_id,
+            graphmodel_id,
+            Types.starting_condition_fn_name(model),
+            Types.stopping_condition_fn_name(model),
+            serialize_to_vec(model)
+        )
+    )[1, :id]
+
+    #insert each model parameter referencing the previously inserted model
+    for (param, val) in pairs(Types.parameters(model))
+        execute(db, load_sql_file("sqlite/sql/models/model_parameters/insert.sql"), (model_id, string(param), string(typeof(val)), string(val)))
+    end
+
+    commit_transaction(db)
+    return model_id
+end
+
+function insert_model(db_info::SQLiteInfo, model::Types.Model; kwargs...)
+    db = DB(db_info)
+    id = insert_model(db, model; kwargs...)
+    close(db)
     return id
 end
 
 
-
-
-function sql_insert_group(description::String)
-    """
-    INSERT OR IGNORE INTO groups
-    (
-        description
-    )
-    VALUES
-    (
-        '$description'
-    )
-    ON CONFLICT (description) DO UPDATE
-        SET description = groups.description
-    RETURNING id;
-    """
-end
 
 
 
 function insert_group(db_info::SQLiteInfo, description::String)
+    id::Int = query(db_info, load_sql_file("sqlite/sql/groups/insert.sql"))[1, :id]
+    return id
+end
+
+function insert_group(db_info::SQLiteInfo, description::String)
     db = DB(db_info)
-    id::Int = query(db, sql_insert_group(description))[1, :id]
+    id = insert_group(db, description)
     close(db)
     return id
 end
 
 
-function sql_insert_simulation()
-    """
-    INSERT INTO simulations
-    (
-        uuid,
-        group_id,
-        prev_simulation_uuid,
-        model_id,
-        period,
-        complete,
-        user_variables,
-        data,
-        state_bin
-    )
-    VALUES (?,?,?,?,?,?,?,?,?)
-    """
+function insert_simulation(db::SQLiteDB, state::Types.State, model_id::Integer, group_id::Union{Integer, Nothing} = nothing; full_store::Bool=true)
+    data_json = "{}"
+    if isdefined(Main, :get_data) #NOTE: this is the quick and dirty way to do this. Ideally need to validate that the get_data function takes State and returns Dict{String, Any}(). (probably should pass the function to state)
+                                 # this also doesnt allow for multiple get_data functions to be defined! need to make more robust
+        data_json = JSON3.write(getfield(Main, :get_data)(state))
+    end
+    state_bin = full_store ? serialize_to_vec(state) : nothing
+
+    begin_transaction(db)
+    simulation_uuid::String = execute(db,
+        load_sql_file("sqlite/sql/simulations/insert.sql"),
+        (
+            string(uuid4()),
+            group_id,
+            state.prev_simulation_uuid,
+            state.model_id,
+            Types.period(state),
+            Types.iscomplete(state),
+            Types.istimedout(state),
+            data_json,
+            state_bin
+        )
+    )[1, :uuid]
+    commit_transaction(db)
+
+    return simulation_uuid
 end
 
-
-function insert_simulation(db_info::SQLiteInfo,
-                                    model_id::Integer,
-                                    group_id::Union{Integer, Nothing},
-                                    prev_simulation_uuid::Union{String, Nothing},
-                                    period::Integer,
-                                    complete::Integer,
-                                    user_variables::String,
-                                    data::String,
-                                    state_bin::Union{BLOB, Nothing}) #state_bin will be nothing if store_state=false in config
-                                    
-    uuid = "$(uuid4())"
-
+function insert_simulation(db_info::SQLiteInfo, state::Types.State, model_id::Integer, group_id::Union{Integer, Nothing} = nothing; full_store::Bool=true) #state_bin will be nothing if store_state=false in config
     db = DB(db_info)
-    begin_transaction(db)
-    execute(db, sql_insert_simulation(), (uuid, group_id, prev_simulation_uuid, model_id, period, complete, user_variables, data, state_bin))
-    commit_transaction(db)
+    insert_simulation(db, state, model_id, group_id; full_store=full_store)
     close(db)
     return uuid
 end
 
 
 
-function sql_query_models(model_id::Integer)
-    """
-    SELECT
-        models.id,
-        parameters.parameters,
-        graphmodels.graphmodel,
-        games.game_bin,
-        games.payoff_matrix_size
-    FROM models
-    INNER JOIN games ON models.game_id = games.id
-    INNER JOIN graphmodels ON models.graphmodel_id = graphmodels.id
-    INNER JOIN parameters ON models.parameters_id = parameters.id
-    WHERE models.id = $model_id;
-    """
-end
-
-function sql_query_simulations(simulation_uuid::String)
-    """
-    SELECT
-        simulations.uuid,
-        simulations.prev_simulation_uuid,
-        simulations.model_id,
-        simulations.state_bin,
-        parameters.parameters,
-        games.game_bin,
-        games.payoff_matrix_size,
-        graphmodels.graphmodel,
-        simulations.group_id,
-        simulations.period,
-        simulations.complete,
-        simulations.user_variables
-    FROM simulations
-    INNER JOIN models ON simulations.model_id = models.id
-    INNER JOIN games ON models.game_id = games.id
-    INNER JOIN graphmodels ON models.graphmodel_id = graphmodels.id
-    INNER JOIN parameters ON models.parameters_id = parameters.id
-    WHERE simulations.uuid = '$simulation_uuid';
-    """
-end
 
 
-function query_models(db_info::SQLiteInfo, model_id::Integer)
+
+query_models(db::SQLiteDB, id::Integer) = query(db, load_sql_file("sqlite/sql/models/find.sql"), (id))
+
+function query_models(db_info::SQLiteInfo, id::Integer)
     db = DB(db_info)
-    query = query(db, sql_query_models(model_id))
+    results = query_models(db, id)
     close(db)
-    return query
+    return results
 end
 
-function query_simulations_for_restore(db_info::SQLiteInfo, simulation_uuid::String)
-    db = DB(db_info)
-    simulation_query = query(db, sql_query_simulations(simulation_uuid))
-    close(db)
-    return simulation_query
+function reconstruct_model(db_info::SQLiteInfo, model_id::Integer)
+    results = query_models(db_info, model_id)
+    if isempty(results)
+        throw(NotFoundError())
+    end
+    model::Types.Model = deserialize_from_vec(results[1, :model_bin])
+    return model
 end
+
+
+
+query_simulations_with_bin(db::SQLiteDB, uuid::String) = query(db, load_sql_file("sqlite/sql/simulations/find_with_bin.sql", (uuid)))
+
+function query_simulations_with_bin(db_info::SQLiteInfo, uuid::String)
+    db = DB(db_info)
+    results = query_simulations_with_bin(db, uuid)
+    close(db)
+    return results
+end
+
+function reconstruct_simulation(db_info::SQLiteInfo, simulation_uuid::String)
+    results = query_simulations_with_bin(db_info, simulation_uuid)
+    if isempty(results)
+        throw(NotFoundError())
+    elseif ismissing(results[1, :state_bin])
+        throw("This simulation is not reproducable. 'full_store' was set to 'false' in the config file")
+    end
+    state::Types.State = deserialize_from_vec(results[1, :state_bin])
+    return state
+end
+
+
+
+
+
 
 function sql_query_incomplete_simulations()
     """

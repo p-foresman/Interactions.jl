@@ -53,24 +53,24 @@ simulate(generator::Generators.ModelGeneratorSet; kwargs...) = simulate_supervis
 
 function simulate(simulation_uuid::String; kwargs...)
     Database.assert_db()
-    model_state::Tuple{Types.Model, Types.State} = Database.reconstruct_simulation(simulation_uuid) #NOTE: model needs to be consumed by state!
-    return simulate_supervisor(model_state; kwargs..., start_time=time())
+    state = Database.reconstruct_simulation(simulation_uuid) #NOTE: model needs to be consumed by state!
+    return simulate_supervisor(state; kwargs..., start_time=time())
 end
 
 function simulate(;kwargs...) #NOTE: probably don't want this method for simulation continuation
     Database.assert_db()
     simulation_uuids = Database.get_incomplete_simulation_uuids()
     # println(simulation_uuids)
-    model_state_tuples = Vector{Tuple{Types.Model, Types.State}}() #NOTE: model needs to be consumed by state!
+    states = Vector{Types.State}() #NOTE: model needs to be consumed by state!
     for simulation_uuid in simulation_uuids
-        push!(model_state_tuples, Database.reconstruct_simulation(simulation_uuid))
+        push!(states, Database.reconstruct_simulation(simulation_uuid))
     end
 
-    return simulate_supervisor(model_state_tuples; kwargs..., start_time=time())
+    return simulate_supervisor(states; kwargs..., start_time=time())
 end
 
 
-function simulate_supervisor(recipe::Union{Types.Model, Generators.ModelGenerator, Generators.ModelGeneratorSet, Vector{Types.State}}; start_time::Float64, samples::Integer=1, db_group_id::Union{Integer, Nothing} = nothing)    
+function simulate_supervisor(recipe::Union{Types.Model, Generators.ModelGenerator, Generators.ModelGeneratorSet, Types.State, Vector{Types.State}}; start_time::Float64, samples::Integer=1, db_group_id::Union{Integer, Nothing} = nothing)    
     producer, total_jobs = get_producer(recipe, samples)
 
     jobs = RemoteChannel(()->Channel{Types.State}(producer))

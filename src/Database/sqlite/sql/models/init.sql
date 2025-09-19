@@ -7,9 +7,7 @@ CREATE TABLE IF NOT EXISTS models
     graphmodel_id INTEGER NOT NULL,
     starting_condition TEXT NOT NULL,
     stopping_condition TEXT NOT NULL,
-    parameters TEXT NOT NULL,
-    variables TEXT NOT NULL,
-    arrays TEXT NOT NULL,
+    model_bin BLOB NOT NULL,
 
     FOREIGN KEY (game_id)
         REFERENCES games (id)
@@ -17,5 +15,5 @@ CREATE TABLE IF NOT EXISTS models
     FOREIGN KEY (graphmodel_id)
         REFERENCES graphmodels (id)
         ON DELETE CASCADE,
-    UNIQUE(agent_type, population_size, game_id, graphmodel_id, starting_condition, stopping_condition, parameters, variables, arrays)
+    UNIQUE(model_bin)
 );

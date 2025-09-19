@@ -1,5 +1,4 @@
-INSERT INTO simulations
-(
+SELECT
     uuid,
     group_id,
     prev_simulation_uuid,
@@ -7,7 +6,6 @@ INSERT INTO simulations
     period,
     complete,
     timedout,
-    data,
-    state_bin
-)
-VALUES (?,?,?,?,?,?,?,?,?)
+    data
+FROM simulations
+WHERE simulations.uuid = ?;
