@@ -90,7 +90,6 @@ include("queryparams.jl")
 include("load_sql.jl")
 
 # include sqlite and postgresql specific APIs
-include("./sqlite/execute.jl")
 include("./sqlite/database_api.jl")
 include("./sqlite/sql_queryparams.jl") #NOTE: this ALL needs to be reorganized
 # include("./postgres/database_api.jl")
