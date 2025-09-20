@@ -88,8 +88,8 @@ get_incomplete_simulation_uuids() = get_incomplete_simulation_uuids(Interactions
 get_incomplete_simulation_uuids(::Nothing) = NoDatabaseError()
 
 
-collect_temp(directory_path::String; kwargs...) = collect_temp(Interactions.MAIN_DB(), directory_path; kwargs...)
-collect_temp(::Nothing, ::String) = NoDatabaseError()
+collect_simulations(directory_path::String; kwargs...) = collect_simulations(Interactions.MAIN_DB(), directory_path; kwargs...)
+collect_simulations(::Nothing, ::String) = NoDatabaseError()
 
 
 reconstruct_model(model_id::Integer) = reconstruct_model(Interactions.MAIN_DB(), model_id) #NOTE: want to have this search through all attached dbs

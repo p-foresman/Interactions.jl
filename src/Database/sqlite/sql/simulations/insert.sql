@@ -11,3 +11,4 @@ INSERT INTO simulations
     state_bin
 )
 VALUES (?,?,?,?,?,?,?,?,?)
+RETURNING uuid

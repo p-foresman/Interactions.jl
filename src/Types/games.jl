@@ -56,11 +56,11 @@ end
 ##########################################
 
 """
-    displayname(game::Game)
+    name(game::Game)
 
 Get the name of a game instance.
 """
-displayname(game::Game) = getfield(game, :name)
+name(game::Game) = getfield(game, :name)
 
 """
     payoff_matrix(game::Game)
@@ -116,4 +116,4 @@ Get the user-defined interaction function which correlates to the String stored 
 interaction_fn(game::Game) = getfield(Registry.Games, Symbol(interaction_fn_name(game)))
 
 
-Base.show(game::Game) = println(displayname(game))
+Base.show(game::Game) = println(name(game))

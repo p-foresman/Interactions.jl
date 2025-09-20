@@ -9,7 +9,7 @@ INSERT OR IGNORE INTO models
     stopping_condition,
     model_bin
 )
-VALUES (?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT (model_bin) DO UPDATE
     SET agent_type = models.agent_type
 RETURNING id;
