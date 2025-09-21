@@ -219,7 +219,7 @@ function insert_group(db_info::SQLiteInfo, description::String)
 end
 
 
-function insert_simulation(db::SQLiteDB, state::Types.State, model_id::Integer, group_id::Union{Integer, Nothing} = nothing; full_store::Bool=true)
+function insert_simulation(db::SQLiteDB, state::Types.State, group_id::Union{Integer, Nothing} = nothing; full_store::Bool=true)
     data_json = "{}"
     if isdefined(Main, :get_data) #NOTE: this is the quick and dirty way to do this. Ideally need to validate that the get_data function takes State and returns Dict{String, Any}(). (probably should pass the function to state)
                                  # this also doesnt allow for multiple get_data functions to be defined! need to make more robust

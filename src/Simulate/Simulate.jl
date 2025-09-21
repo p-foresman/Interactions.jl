@@ -73,28 +73,36 @@ end
 function simulate_supervisor(recipe::Union{Types.Model, Generators.ModelGenerator, Generators.ModelGeneratorSet, Types.State, Vector{Types.State}}; start_time::Float64, samples::Integer=1, db_group_id::Union{Integer, Nothing} = nothing)    
     producer, total_jobs = get_producer(recipe, samples)
 
-    jobs = RemoteChannel(()->Channel{Types.State}(producer))
-    results = RemoteChannel(()->Channel{Union{Types.State, Exception}}(nworkers())) #allow this to hold Exceptions for error handling
+    jobs = RemoteChannel(()->Channel{Types.State}(32), 1)
+    results = RemoteChannel(()->Channel{Union{Types.State, Exception}}(nworkers()), 1) #allow this to hold Exceptions for error handling
+    
+    @async producer(jobs)
 
-    for worker in workers() #run a _simulate process on each worker
+    for worker in workers() #run a simulate_worker process on each worker
         remote_do(simulate_worker, worker, jobs, results; start_time=start_time, timeout=Interactions.SETTINGS.timeout, capture_interval=Interactions.SETTINGS.capture_interval)
     end
-    # simulate_worker(jobs, results; start_time=start_time, timeout=Interactions.SETTINGS.timeout, capture_interval=Interactions.SETTINGS.capture_interval)
-    
+
     num_received = 0
     num_completed = 0
     while num_received < total_jobs
         #push to db if the simulation has completed OR if checkpoint is active in settings. For timeout with checkpoint disabled, data is NOT pushed to a database (currently)
         result_state = take!(results)
         isa(result_state, Exception) && throw(result_state) #error handling for distributed workers
-        simulation_uuid = Database.insert_simulation(result_state, result_state.model_id, db_group_id; full_store=!isnothing(Interactions.DATABASE()) ? Interactions.DATABASE().full_store : false) #false doesnt matter here, if there's no database this will return a NoDatabaseError() and nothing will happen
+
+        simulation_uuid::Union{String, Nothing} = nothing
+        try
+            simulation_uuid = Database.insert_simulation(result_state, db_group_id; full_store=!isnothing(Interactions.DATABASE()) ? Interactions.DATABASE().full_store : false) #false doesnt matter here, if there's no database this will return a NoDatabaseError() and nothing will happen
+        catch e
+            !isa(e, Database.NoDatabaseError) && throw(e)
+        end
+
         if Types.iscomplete(result_state)
             num_received += 1
             num_completed += 1
         elseif Types.istimedout(result_state)
             num_received += 1
         else #if the state is not complete and it didn't time out, it'a a periodic push, so send back to simulate futher
-            !isa(simulation_uuid, Database.NoDatabaseError) && Types.prev_simulation_uuid!(result_state, simulation_uuid) #set the previously-pushed simulation_uuid to keep order
+            !isnothing(simulation_uuid) && Types.prev_simulation_uuid!(result_state, simulation_uuid) #set the previously-pushed simulation_uuid to keep order
             put!(jobs, result_state)
         end
     end
@@ -115,6 +123,7 @@ function simulate_worker(jobs::RemoteChannel{Channel{Types.State}}, results::Rem
     while true
         try
             state = take!(jobs)
+            
             stopping_condition_reached = Types.get_enclosed_stopping_condition_fn(state.model)
             Types.restore_rng_state(state)
             

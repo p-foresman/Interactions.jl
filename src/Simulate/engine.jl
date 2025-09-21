@@ -4,7 +4,7 @@
 # function simulate(state::Types.State, args...; kwargs...) #NOTE: should include this to call simply
 
 #state is only mutated within the scope of this function (using multiple dispatch for to optimize main simulation loop)
-function simulate!(state::Types.State, ::Nothing, ::Nothing; stopping_condition_reached::Function, start_time::Float64)
+function simulate!(state::Types.State, ::Nothing, ::Nothing; stopping_condition_reached::Function, kwargs...)
     while true
         run_period!(state)
         if stopping_condition_reached(state)
@@ -31,13 +31,13 @@ function simulate!(state::Types.State, timeout::Int, ::Nothing; stopping_conditi
     return nothing
 end
 
-function simulate!(state::Types.State, ::Nothing, capture_interval::Int; stopping_condition_reached::Function)
+function simulate!(state::Types.State, ::Nothing, capture_interval::Int; stopping_condition_reached::Function, kwargs...)
     while true
         run_period!(state)
         if stopping_condition_reached(state)
             Types.complete!(state)
             break
-        elseif iszero(period(state) % capture_interval)
+        elseif iszero(Types.period(state) % capture_interval)
             break
         end
     end
@@ -54,7 +54,7 @@ function simulate!(state::Types.State, timeout::Int, capture_interval::Int; stop
         elseif (time() - start_time) > timeout
             Types.timedout!(state)
             break
-        elseif iszero(period(state) % capture_interval)
+        elseif iszero(Types.period(state) % capture_interval)
             break
         end
     end

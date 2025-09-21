@@ -74,7 +74,7 @@ struct NotFoundError <: Exception
     NotFoundError() = new("Item was not found in the configured database.")
 end
 
-assert_db() = @assert !isnothing(Interactions.DATABASE()) Database.NoDatabaseError()
+assert_db() = isnothing(Interactions.DATABASE()) && throw(Database.NoDatabaseError())
 
 
 
