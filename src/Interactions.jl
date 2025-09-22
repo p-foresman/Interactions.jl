@@ -22,7 +22,7 @@ using .Types
 export 
     PayoffMatrix,
     Game,
-    displayname,
+    name,
     payoff_matrix,
     strategies,
     random_strategy,

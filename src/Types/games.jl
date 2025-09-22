@@ -34,20 +34,20 @@ struct Game{S1, S2, L} #NOTE: ensure symmetric?? Make multiple types of games. A
         static_payoff_matrix = PayoffMatrix{S1, S2, L}(payoff_matrix)
         return new{S1, S2, L}(name, static_payoff_matrix, interaction_fn_name)
     end
-    function Game(name::String, payoff_matrix::Matrix{Int}) #for a zero-sum payoff matrix ########################## MUST FIX THIS!!!!!!!! #####################
-        matrix_size = size(payoff_matrix)
-        S1 = matrix_size[1]
-        S2 = matrix_size[2]
-        L = S1 * S2
-        indices = CartesianIndices(payoff_matrix)
-        tuple_vector = Vector{Tuple{Int, Int}}([])
-        for index in indices
-            new_tuple = Tuple{Int, Int}([payoff_matrix[index], -payoff_matrix[index]])
-            push!(tuple_vector, new_tuple)
-        end
-        new_payoff_matrix = reshape(tuple_vector, matrix_size)
-        return new{S1, S2, L}(name, PayoffMatrix{S1, S2, L}(new_payoff_matrix))
-    end
+    # function Game(name::String, payoff_matrix::Matrix{Int}) #for a zero-sum payoff matrix ########################## MUST FIX THIS!!!!!!!! #####################
+    #     matrix_size = size(payoff_matrix)
+    #     S1 = matrix_size[1]
+    #     S2 = matrix_size[2]
+    #     L = S1 * S2
+    #     indices = CartesianIndices(payoff_matrix)
+    #     tuple_vector = Vector{Tuple{Int, Int}}([])
+    #     for index in indices
+    #         new_tuple = Tuple{Int, Int}([payoff_matrix[index], -payoff_matrix[index]])
+    #         push!(tuple_vector, new_tuple)
+    #     end
+    #     new_payoff_matrix = reshape(tuple_vector, matrix_size)
+    #     return new{S1, S2, L}(name, PayoffMatrix{S1, S2, L}(new_payoff_matrix))
+    # end
 end
 
 

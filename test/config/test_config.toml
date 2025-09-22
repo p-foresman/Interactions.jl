@@ -6,6 +6,7 @@ processes = 1
 
 timeout = 3600
 timeout_exit_code = 0 #0 to not exit?
+capture_interval = 0
 #[checkpoint]
 #timeout = 3600
 #database = ""
@@ -17,7 +18,6 @@ figure_dirpath = "" #defined which directory figures should be created in (if re
 # use = true
 selected = "" #"sqlite.default"
 attached = []
-push_period = 0
 checkpoint = true #set true to push the simulation state to the database in the case of a timeout
 full_store = true #set to false to save partial information for storage efficiency. If false, simulations stored in the database will not be reproducable/continuable
 # checkpoint_database = "" #if a main selected database exists and checkpoint is set to true, this database will be used as an alternate for checkpoints (leave empty to use the selected database)

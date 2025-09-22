@@ -16,8 +16,6 @@ using Interactions
     @testset "Accessors" begin
         @test Interactions.Types.id(A1) == 1
         @test Interactions.Types.id(A2) == 2
-        @test displayname(A1) == "1"
-        @test displayname(A2) == "2"
         Interactions.Types.ishermit!(A1, true)
         @test Interactions.Types.ishermit(A1) == true
         Interactions.Types.ishermit!(A2, false)

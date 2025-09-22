@@ -9,7 +9,7 @@ export
     #Game stuff
     PayoffMatrix,
     Game,
-    displayname, #multi-use
+    name, #multi-use
     payoff_matrix,
     strategies,
     random_strategy,

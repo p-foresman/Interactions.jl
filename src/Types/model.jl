@@ -165,7 +165,7 @@ graphmodel(model::Model) = getfield(model, :graphmodel)
 Generate a graph from the model.
 """
 function generate_graph(model::Model)::GraphsExt.Graphs.SimpleGraph
-    graph::GraphsExt.Graphs.SimpleGraph = fn(graphmodel(model))(model, args(graphmodel(model))...; kwargs(graphmodel(model))...)
+    graph::GraphsExt.Graphs.SimpleGraph = graphmodel_fn(graphmodel(model))(model, args(graphmodel(model))...; kwargs(graphmodel(model))...)
     if GraphsExt.ne(graph) == 0 #NOTE: we aren't considering graphs with no edges (obviously). Does it even make sense to consider graphs with more than one component?
         return generate_graph(model)
     end

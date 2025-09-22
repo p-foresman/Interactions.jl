@@ -9,6 +9,21 @@ module Registry
 
 using ..Interactions, Distributed, ParallelDataTransfer, Graphs
 
+
+"""
+    Registry.NotDefinedError
+
+Type to signal that a given name is not defined in the Registry.
+"""
+struct NotDefinedError <: Exception
+    message::String
+    function NotDefinedError(var::Symbol, mac::Symbol)
+        isdefined(Registry, mac) || ErrorException("The macro provided to NotDefinedError does not exist") #NOTE: not sure if this is okay
+        return new("'$var' was not found in the Registry. Must use '$mac' macro to register it.")
+    end
+end
+
+
 """
     Register
 

@@ -144,7 +144,7 @@ function insert_graphmodel(db::SQLiteDB, graphmodel::Types.GraphModel; new_trans
     new_transaction && begin_transaction(db)
     
     #insert graphmodel
-    graphmodel_id::Int = query(db, load_sql_file("sqlite/sql/graphmodels/insert.sql"), (Types.fn_name(graphmodel), Types.displayname(graphmodel), serialize_to_vec(graphmodel)))[1, :id]
+    graphmodel_id::Int = query(db, load_sql_file("sqlite/sql/graphmodels/insert.sql"), (Types.graphmodel_fn_name(graphmodel), Types.displayname(graphmodel), serialize_to_vec(graphmodel)))[1, :id]
     
     #insert each graphmodel parameter referencing the previously inserted graphmodel
     for (param, val) in pairs(Types.parameters(graphmodel))

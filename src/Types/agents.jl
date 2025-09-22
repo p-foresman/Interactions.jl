@@ -40,13 +40,6 @@ Get the id of an agent.
 id(agent::Agent) = getfield(agent, :id)
 
 """
-    displayname(agent::Agent)
-
-Get the id/identifier of an agent.
-"""
-displayname(agent::Agent) = string(getfield(agent, :id)) #NOTE: is this unnecessary?
-
-"""
     ishermit(agent::Agent)
 
 Determine if an agent is a hermit on the AgentGraph (i.e. degree=0).
