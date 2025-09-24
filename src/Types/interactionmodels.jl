@@ -31,8 +31,7 @@ struct GraphModel <: InteractionModel
             Symbol(param_types[i][1]) == arg_names[i] || throw(ErrorException("arguments provided must be in the order of the function parameters"))
         end
         # println(Base.return_types(f, (Model, arg_types...))[1])
-        Base.return_types(f, (Model, arg_types...))[1] <: GraphsExt.Graphs.SimpleGraph || throw(DomainError(fn_var, "The corresponding function must return a Graphs.SimpleGraph"))
-        # println(arg_types)
+        # Base.return_types(f, (Model, arg_types...))[1] <: Graphs.SimpleGraph || throw(DomainError(fn_var, "The corresponding function must return a Graphs.SimpleGraph")) #NOTE: FIX. user-defined graphmodels are currently printing Any as return type
         return new(fn_var, args, Tuple(arg_types), kwargs) #(; zip(params , ordered_args)...)
     end
     GraphModel(fn_var::Symbol; kwargs::Dict{Symbol, <:Any}=Dict{Symbol, Any}(), args...) = GraphModel(fn_var, NamedTuple(args), kwargs)
@@ -67,9 +66,9 @@ displayname(graphmodel::GraphModel) = "$(fn_name(graphmodel))$(isempty(parameter
 Base.show(graphmodel::GraphModel) = println(displayname(graphmodel))
 
 #NOTE: probably do want this here, but want it to be self contained to GraphModel?
-# function generate_graph(graphmodel::GraphModel, parameters::Parameters)::GraphsExt.Graphs.SimpleGraph
-#     graph::GraphsExt.Graphs.SimpleGraph = fn(graphmodel)(parameters, args(graphmodel)...; kwargs(graphmodel)...)
-#     if GraphsExt.ne(graph) == 0 #NOTE: we aren't considering graphs with no edges (obviously). Does it even make sense to consider graphs with more than one component?
+# function generate_graph(graphmodel::GraphModel, parameters::Parameters)::Graphs.SimpleGraph
+#     graph::Graphs.SimpleGraph = fn(graphmodel)(parameters, args(graphmodel)...; kwargs(graphmodel)...)
+#     if Graphs.ne(graph) == 0 #NOTE: we aren't considering graphs with no edges (obviously). Does it even make sense to consider graphs with more than one component?
 #         return generate_graph(graphmodel, parameters)
 #     end
 #     return graph

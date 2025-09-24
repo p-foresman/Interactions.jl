@@ -2,7 +2,6 @@ module Database
 
 import
     ..Types,
-    ..GraphsExt,
     ..Interactions
 
 using

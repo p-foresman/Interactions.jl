@@ -8,10 +8,6 @@ module Interactions
 #basic utility functions
 include("utility.jl")
 
-#extensions of Graphs.jl graph constructors
-include("GraphsExt/GraphsExt.jl")
-# import .GraphsExt
-
 include("Registry/Registry.jl")
 using .Registry: @graphmodel, @startingcondition, @stoppingcondition, @interaction
 export @graphmodel, @startingcondition, @stoppingcondition, @interaction

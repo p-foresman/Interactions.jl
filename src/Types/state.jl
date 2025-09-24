@@ -145,12 +145,12 @@ Get the graph (Graphs.SimpleGraph{Int}) in the model.
 """
 graph(state::State) = graph(agentgraph(state))
 
-"""
-    adjacency_matrix_str(state::State)
+# """
+#     adjacency_matrix_str(state::State)
 
-Get the adjacency matrix in a string for the graph of the given Model
-"""
-adjacency_matrix_str(state::State) = GraphsExt.adjacency_matrix_str(graph(state))
+# Get the adjacency matrix in a string for the graph of the given Model
+# """
+# adjacency_matrix_str(state::State) = adjacency_matrix_str(graph(state))
 
 """
     agents(state::State)
@@ -297,7 +297,7 @@ Choose a random relationship/edge in the specified component and set players to 
 function set_players!(state::State, component::ConnectedComponent)
     v = rand(vertices(component))
     player!(state, 1, v)
-    player!(state, 2, rand(GraphsExt.neighbors(graph(state), v)))
+    player!(state, 2, rand(Graphs.neighbors(graph(state), v)))
     # edge::Graphs.SimpleEdge{Int} = random_edge(component)
     # vertex_list::Vector{Int} = shuffle!([src(edge), dst(edge)]) #NOTE: is the shuffle necessary here?
     # for player_number in 1:2 #NOTE: this will always be 2. Should I just optimize for two player games?

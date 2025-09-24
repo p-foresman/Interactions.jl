@@ -1,62 +1,8 @@
-"""
-Extension of Graphs.jl
-"""
-module GraphsExt
-
-using Graphs
-
-const Graph = SimpleGraph{Int}
-# const AdjacencyMatrix = Graphs.SparseMatrixCSC{Int64, Int64}
-
-"""
-    Graph(matrix_str::String)
-
-Create a Graphs.SimpleGraph{Int} from a matrix string.
-"""
-SimpleGraph{Int}(matrix_str::String) = Graph(eval(Meta.parse(matrix_str))) # can call Graph(matrix_str::String) and this will be called
-
-adjacency_matrix_str(graph::Graph) = string(Matrix(adjacency_matrix(graph)))
-
-
 possible_edge_count(N::Int) = Int((N * (N-1)) / 2)
 edge_density(N::Integer, λ::Real) = λ / (N - 1)
 edge_count(N::Integer, d::Float64) = Int(round(d * possible_edge_count(N)))
 mean_degree(N::Int, d::Float64) = Int(round((N - 1) * d))
 
-function number_hermits(graph::Graph)
-    number_hermits = 0
-    for vertex in Graphs.vertices(graph) #could make graph-type specific multiple dispatch so this only needs to happen for ER and SBM (otherwise num_hermits=0)
-        if iszero(Graphs.degree(graph, vertex))
-            number_hermits += 1
-        end
-    end
-    return number_hermits
-end
-
-function connected_component_vertices(g::AbstractGraph{T}) where {T}
-    return filter(component -> length(component) > 1, connected_components(g))
-end
-
-function connected_component_sets(g::AbstractGraph{T}) where {T}
-    component_vertex_sets = connected_component_vertices(g)
-    # component_edges = fill([], length(components))
-    component_count = length(component_vertex_sets)
-    component_edge_sets::Vector{Vector{Graphs.SimpleEdge}} = []
-    for vertex_set in component_vertex_sets
-        edge_set::Vector{Graphs.SimpleEdge} = []
-        for edge in Graphs.edges(g)
-            if edge.src in vertex_set && edge.dst in vertex_set
-                push!(edge_set, edge)
-            end
-        end
-        push!(component_edge_sets, edge_set)
-    end
-    return component_vertex_sets, component_edge_sets, component_count
-end
-
-function connected_component_edges(g::AbstractGraph{T}) where {T}
-    return connected_component_sets(g)[2]
-end
 
 
 function erdos_renyi_rg(N::Integer, λ::Real; kwargs...)
@@ -121,5 +67,3 @@ function plot_fitted_degree_dist(D, g::SimpleGraph{Int})
     nv = Graphs.nv(g)
     return plot(D, x_lims=[0, nv])
 end
-
-end #GraphsExt

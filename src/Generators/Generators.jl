@@ -11,7 +11,7 @@ import
     ..Types,
     ..Database,
     ..Registry,
-    ..GraphsExt,
+    ..Graphs,
     ..Interactions
 
 # using ..Interactions

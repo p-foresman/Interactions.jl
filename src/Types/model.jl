@@ -26,7 +26,6 @@ struct Model{S1, S2, L, A<:AbstractAgent} #, GM <: GraphModel}
     parameters::Parameters #the parameters used in the model (immutable dictionary - these parameters cannot be changed during the course of a simulation)
     variables::Variables #the variables used in the model (these variables can be altered during the course of a simulation)
     arrays::Arrays
-    #graph::Union{Nothing, GraphsExt.Graph} #pass graph in here to be passed to state. if no graph is passed, it's generated when state is initialized
 
     # function Model(population::Tuple{Type{A}, Int}, game::Game{S1, S2, L}, graphmodel::GraphModel, starting_condition_fn_name::String, stopping_condition_fn_name::String; parameters::Parameters=Parameters(), variables::Variables=Variables()) where {A<:AbstractAgent, S1, S2}
     #     @assert isdefined(Registry.StartingConditions, Symbol(starting_condition_fn_name)) "'starting_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @startingcondition macro before function to register it"
@@ -39,42 +38,13 @@ struct Model{S1, S2, L, A<:AbstractAgent} #, GM <: GraphModel}
         # population::Tuple{Type{A}, Int} = (agent_type, Int(population_size))
         return new{S1, S2, L, A}(agent_type, population_size, game, graphmodel, starting_condition_fn_name, stopping_condition_fn_name, parameters, variables, arrays)
     end
-    # function Model(game::Game{S1, S2, L}, params::Parameters, graphmodel::GraphModel, graph::GraphsExt.Graph) where {S1, S2, L}
-    #     return new{S1, S2, L}(game, params, graphmodel, graph) #this constructor allows a graph to be fed in
-    # end
-    # function Model(game::Game{S1, S2, L}, params::Parameters, graphmodel::GraphModel, graph_adj_matrix::Matrix) where {S1, S2, L}
-    #     @assert size(graph_adj_matrix)[1] == size(graph_adj_matrix)[2] "adjecency matrix must be equal lengths in both dimensions"
-    #     graph = GraphsExt.Graph(graph_adj_matrix) #this constructor allows an adjacency matrix to be fed in for graph generation
-    #     return new{S1, S2, L}(game, params, graphmodel, graph)
-    # end
-    # function Model(game::Game{S1, S2, L}, params::Parameters, graphmodel::GraphModel, graph_adj_matrix_str::String) where {S1, S2, L}
-    #     graph = GraphsExt.Graph(graph_adj_matrix_str) #this constructor allows an adjacency matrix string to be fed in for graph generation
-    #     return new{S1, S2, L}(game, params, graphmodel, graph)
-    # end
 end
 
-# function Models(game::Game, params::Parameters, graphmodel::GraphModel; count::Int) #NOTE: dont know what this is used for, can probably delete
-#     return fill(Model(game, params, graphmodel), count)
-# end
 
 
 ##########################################
 # Model Accessors
 ##########################################
-
-# """
-#     agent_type(model::Model)
-
-# Get the agent type (<:AbstractAgent) used in the model.
-# """
-# agent_type(model::Model) = get_field(model, :agent_type)
-
-# """
-#     population(model::Model)
-
-# Get the population description used in the model.
-# """
-# population(model::Model) = getfield(model, :population)
 
 """
     agent_type(model::Model)
@@ -152,37 +122,18 @@ Get the GraphModel instance in the model.
 graphmodel(model::Model) = getfield(model, :graphmodel)
 
 
-# """
-#    generate_graph(model::Model)
-   
-# Generate a graph from the model.
-# """
-# generate_graph(model::Model) = generate_graph(graphmodel(model), parameters(model))
-
 """
    generate_graph(model::Model)
    
 Generate a graph from the model.
 """
-function generate_graph(model::Model)::GraphsExt.Graphs.SimpleGraph
-    graph::GraphsExt.Graphs.SimpleGraph = graphmodel_fn(graphmodel(model))(model, args(graphmodel(model))...; kwargs(graphmodel(model))...)
-    if GraphsExt.ne(graph) == 0 #NOTE: we aren't considering graphs with no edges (obviously). Does it even make sense to consider graphs with more than one component?
+function generate_graph(model::Model)::Graphs.SimpleGraph
+    graph::Graphs.SimpleGraph = graphmodel_fn(graphmodel(model))(model, args(graphmodel(model))...; kwargs(graphmodel(model))...)
+    if Graphs.ne(graph) == 0 #NOTE: we aren't considering graphs with no edges (obviously). Does it even make sense to consider graphs with more than one component?
         return generate_graph(model)
     end
     return graph
 end
-
-# """
-#     AgentGraph(model::Model)
-
-# Initialize an AgentGraph from a model
-# """
-# function AgentGraph(model::Model)
-#     ag = AgentGraph(generate_graph(model), agent_type(model))
-#     # starting_condition_fn_call(model, ag) #get the user-defined starting condition function and use it to initialize the AgentGraph instance
-#     return ag
-# end
-
 
 
 
@@ -199,13 +150,6 @@ starting_condition_fn_name(model::Model) = getfield(model, :starting_condition_f
 Get the user-defined starting condition function which correlates to the String stored in the 'starting_condition_fn_name' field.
 """
 starting_condition_fn(model::Model) = getfield(Registry.StartingConditions, Symbol(starting_condition_fn_name(model)))
-
-# """ # moved to State
-#     starting_condition_fn_call(model::Model, agentgraph::AgentGraph)
-
-# Call the user-defined starting condition function which correlates to the String stored in the 'starting_condition_fn_str' Parameters field.
-# """
-# starting_condition_fn_call(model::Model, agentgraph::AgentGraph) = starting_condition_fn(model)(model, agentgraph)
 
 
 """
@@ -309,150 +253,3 @@ function Base.show(model::Model) #NOTE: FIX
     # show(parameters(model).stoppingcondition)
     # println()
 end
-
-###########################################
-
-
-# """
-#     starting_condition_fn_str(model::Model)
-
-# Get the 'starting_condition_fn_str' Parameters field.
-# """
-# starting_condition_fn_str(model::Model) = starting_condition_fn_str(parameters(model))
-
-# """
-#     starting_condition_fn(model::Model)
-
-# Get the user-defined starting condition function which correlates to the String stored in the 'starting_condition_fn_str' Parameters field.
-# """
-# starting_condition_fn(model::Model) = starting_condition_fn(parameters(model))
-
-# """
-#     starting_condition_fn_call(model::Model, agentgraph::AgentGraph)
-
-# Call the user-defined starting condition function which correlates to the String stored in the 'starting_condition_fn_str' Parameters field.
-# """
-# starting_condition_fn_call(model::Model, agentgraph::AgentGraph) = starting_condition_fn(model)(model, agentgraph)
-
-
-# """
-#     stopping_condition_fn_str(model::Model)
-
-# Get the 'stopping_condition_fn_str' Parameters field.
-# """
-# stopping_condition_fn_str(model::Model) = stopping_condition_fn_str(parameters(model))
-
-# """
-#     stopping_condition_fn(model::Model)
-
-# Get the user-defined stopping condition function which correlates to the String stored in the 'stopping_condition_fn' Parameters field.
-# """
-# stopping_condition_fn(model::Model) = stopping_condition_fn(parameters(model))
-
-# """
-#     get_enclosed_stopping_condition_fn(model::Model)
-
-# Call the user-defined stopping condition function which correlates to the String stored in the 'starting_condition_fn_str' Parameters field to get the enclosed function.
-# """
-# get_enclosed_stopping_condition_fn(model::Model) = stopping_condition_fn(model)(model) #NOTE: this closure method can probably be eliminated
-
-
-# """
-#     graph_type(graphmodel::Model)
-
-# Get the graph type of the model
-# """
-# graph_type(model::Model) = graph_type(graphmodel(model))
-# ###add more
-
-
-#StartingCondition
-# """
-#     startingcondition(model::Model)
-
-# Get the StartingCondition instance in the model.
-# """
-# startingcondition(model::Model) = getfield(model, :startingcondition)
-
-
-# #StoppingCondition
-# """
-#     stoppingcondition(model::Model)
-
-# Get the StoppingCondition instance in the model.
-# """
-# stoppingcondition(model::Model) = getfield(model, :stoppingcondition)
-
-# """
-#     graph(model::Model)
-
-# Get the graph associated with a Model instance.
-# """
-# graph(model::Model) = getfield(model, :graph)
-
-# """
-#     graph!(model::Model, graph::GraphsExt.Graph)
-
-# Set the model's active graph.
-# """
-# graph!(model::Model, graph::GraphsExt.Graph) = setfield!(model, :graph, graph)
-
-
-
-# """
-#    generate_graph!(model::Model)
-   
-# Generate a graph from the model and set this graph as the model's active graph
-# """
-# function generate_graph!(model::Model)
-#     graph::GraphsExt.Graph = generate_graph(graphmodel(model), parameters(model))
-#     graph!(model, graph)
-#     return graph
-# end
-
-
-#NOTE: model might not have a graph
-# """
-#     number_hermits(model::Model)
-
-# Get the number of hermits (vertecies with degree=0) in the graph of a Model instance.
-# """
-# number_hermits(model::Model) = GraphsExt.number_hermits(graph(model))
-
-
-#Model constructor barriers (used to initialize state components from model)
-
-# function AgentGraph(model::Model)
-#     agentgraph::AgentGraph = AgentGraph(graph(model))
-#     # initialize_agent_data!(agentgraph, game(model), parameters(model), startingcondition(model))
-#     starting_condition_fn_call(model, agentgraph) #get the user-defined starting condition function and use it to initialize the AgentGraph instance
-#     return agentgraph
-# end
-
-
-# """
-#     AgentGraph(model::Model, graph::GraphsExt.Graph)
-
-# Initialize an AgentGraph from a model with a pre-provided graph. The model population must equal the number of vertices in the graph provided.
-# """
-# function AgentGraph(model::Model, graph::GraphsExt.Graph)
-#     @assert number_agents(model) == GraphsExt.nv(graph)  "The model population must equal the number of vertices in the graph provided"
-#     #NOTE: could also check if graph could have been generated from the specific graph model, or just leave it up to the user
-#     agentgraph::AgentGraph = AgentGraph(graph)
-#     starting_condition_fn_call(model, agentgraph) #get the user-defined starting condition function and use it to initialize the AgentGraph instance
-#     return agentgraph
-# end
-
-
-#NOTE: moved to state
-# """
-#     adjacency_matrix_str(model::Model)
-
-# Get the adjacency matrix in a string for the graph of the given Model
-# """
-# adjacency_matrix_str(model::Model) = GraphsExt.adjacency_matrix_str(graph(model))
-
-
-# PreAllocatedArrays(model::Model) = PreAllocatedArrays(game(model))
-
-

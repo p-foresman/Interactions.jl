@@ -24,7 +24,7 @@ struct GraphModelGenerator <: Generator
         for i in eachindex(param_types) #ensure the orders of arguments are right. If these are right, args is sufficiently validated since type validation was completed previously
             @assert Symbol(param_types[i][1]) == arg_names[i] "arguments provided must be in the order of the function parameters"
         end
-        @assert Base.return_types(f, (Parameters, arg_types...))[1] <: GraphsExt.Graphs.SimpleGraph "the fn provided must return a Graphs.SimpleGraph"
+        @assert Base.return_types(f, (Parameters, arg_types...))[1] <: Graphs.SimpleGraph "the fn provided must return a Graphs.SimpleGraph"
         #@assert all(i -> isa(i, Real) || isa(i, Vector{<:Real}), values(params)) "All params must Union{Real, Vector{<:Real}}"
         k = keys(args)
         v = map(x->isa(x, Vector) ? x : [x], collect(args))

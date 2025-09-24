@@ -3,7 +3,6 @@ module Analyze
 import
     ..Database,
     ..Interactions,
-    ..GraphsExt
 
 using
     Plots,
