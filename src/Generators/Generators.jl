@@ -8,10 +8,10 @@ export
     get_model_id #NOTE: this one is specific for my stuff on OSG, maybe delete
 
 import
+    Graphs,
     ..Types,
     ..Database,
     ..Registry,
-    ..Graphs,
     ..Interactions
 
 # using ..Interactions
