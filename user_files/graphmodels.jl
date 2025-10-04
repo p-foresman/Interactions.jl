@@ -11,16 +11,30 @@ mean_degree(N::Int, d::Float64) = Int(round((N - 1) * d))
     return g
 end
 
-@graphmodel function erdos_renyi(model::Model, λ::Real; kwargs...)
+@graphmodel function erdos_renyi(model::Model)
     possible_edge_count(N::Int) = Int((N * (N-1)) / 2)
     edge_density(N::Integer, λ::Real) = λ / (N - 1)
     edge_count(N::Integer, d::Float64) = Int(round(d * possible_edge_count(N)))
 
     N = population_size(model)
-    num_edges = edge_count(N, Interactions.GraphsExt.edge_density(N, λ))
-    g::Graphs.SimpleGraph = Graphs.erdos_renyi(N, num_edges; kwargs...)
+    λ = parameters(model, :λ)
+    num_edges = edge_count(N, edge_density(N, λ))
+    g::Graphs.SimpleGraph = Graphs.erdos_renyi(N, num_edges) #; kwargs...)
     return g
 end
+
+
+# @graphmodel function erdos_renyi(model::Model, λ::Real; kwargs...)
+#     # λ = parameters(model, :λ)
+#     possible_edge_count(N::Int) = Int((N * (N-1)) / 2)
+#     edge_density(N::Integer, λ::Real) = λ / (N - 1)
+#     edge_count(N::Integer, d::Float64) = Int(round(d * possible_edge_count(N)))
+
+#     N = population_size(model)
+#     num_edges = edge_count(N, Interactions.GraphsExt.edge_density(N, λ))
+#     g::Graphs.SimpleGraph = Graphs.erdos_renyi(N, num_edges; kwargs...)
+#     return g
+# end
 
 
 

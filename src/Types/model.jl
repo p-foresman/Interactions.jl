@@ -20,23 +20,24 @@ struct Model{S1, S2, L, A<:AbstractAgent} #, GM <: GraphModel}
     # population::Tuple{Type{A}, Int} # (agent_type, population_size) --- sticking with one agent type for now, in the future could store a vector of population tuples which describe the population makeup
     # population::Dict{DataType, Int} #NOTE: could do this for heterogeneous population!
     game::Game{S1, S2, L}
-    graphmodel::GraphModel #NOTE: make this a concrete type for better performance? (tried and didnt help)
-    starting_condition_fn_name::String
-    stopping_condition_fn_name::String
+    graphmodel_fn_var::Symbol #NOTE: this implementation doesnt allow for graphmodel kwargs (maybe not important, or user could just define them as a parameter?)
+    starting_condition_fn_var::Symbol
+    stopping_condition_fn_var::Symbol
     parameters::Parameters #the parameters used in the model (immutable dictionary - these parameters cannot be changed during the course of a simulation)
     variables::Variables #the variables used in the model (these variables can be altered during the course of a simulation)
     arrays::Arrays
 
-    # function Model(population::Tuple{Type{A}, Int}, game::Game{S1, S2, L}, graphmodel::GraphModel, starting_condition_fn_name::String, stopping_condition_fn_name::String; parameters::Parameters=Parameters(), variables::Variables=Variables()) where {A<:AbstractAgent, S1, S2}
-    #     @assert isdefined(Registry.StartingConditions, Symbol(starting_condition_fn_name)) "'starting_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @startingcondition macro before function to register it"
-    #     @assert isdefined(Registry.StoppingConditions, Symbol(stopping_condition_fn_name)) "'stopping_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @stoppingcondition macro before function to register it"
-    #     return new{S1, S2, A}(population, game, graphmodel, starting_condition_fn_name, stopping_condition_fn_name, parameters, variables)
+    # function Model(population::Tuple{Type{A}, Int}, game::Game{S1, S2, L}, graphmodel::GraphModel, starting_condition_fn_var::String, stopping_condition_fn_var::String; parameters::Parameters=Parameters(), variables::Variables=Variables()) where {A<:AbstractAgent, S1, S2}
+    #     @assert isdefined(Registry.StartingConditions, Symbol(starting_condition_fn_var)) "'starting_condition_fn_var' provided does not correlate to a defined function in the Registry. Must use @startingcondition macro before function to register it"
+    #     @assert isdefined(Registry.StoppingConditions, Symbol(stopping_condition_fn_var)) "'stopping_condition_fn_var' provided does not correlate to a defined function in the Registry. Must use @stoppingcondition macro before function to register it"
+    #     return new{S1, S2, A}(population, game, graphmodel, starting_condition_fn_var, stopping_condition_fn_var, parameters, variables)
     # end
-    function Model(agent_type::Type{A}, population_size::Integer, game::Game{S1, S2, L}, graphmodel::GraphModel, starting_condition_fn_name::String, stopping_condition_fn_name::String; parameters::Parameters=Parameters(), variables::Variables=Variables(), arrays::Arrays=Arrays()) where {A<:AbstractAgent, S1, S2, L}
-        @assert isdefined(Registry.StartingConditions, Symbol(starting_condition_fn_name)) "'starting_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @startingcondition macro before function to register it"
-        @assert isdefined(Registry.StoppingConditions, Symbol(stopping_condition_fn_name)) "'stopping_condition_fn_name' provided does not correlate to a defined function in the Registry. Must use @stoppingcondition macro before function to register it"
+    function Model(agent_type::Type{A}, population_size::Integer, game::Game{S1, S2, L}, graphmodel_fn_var::Symbol, starting_condition_fn_var::Symbol, stopping_condition_fn_var::Symbol; parameters::Parameters=Parameters(), variables::Variables=Variables(), arrays::Arrays=Arrays()) where {A<:AbstractAgent, S1, S2, L}
+        isdefined(Registry.GraphModels, graphmodel_fn_var) || throw(Registry.NotDefinedError(graphmodel_fn_var, Symbol("@graphmodel")))
+        isdefined(Registry.StartingConditions, starting_condition_fn_var) || throw(Registry.NotDefinedError(starting_condition_fn_var, Symbol("@startingcondition")))
+        isdefined(Registry.StoppingConditions, stopping_condition_fn_var) || throw(Registry.NotDefinedError(stopping_condition_fn_var, Symbol("@stoppingcondition")))
         # population::Tuple{Type{A}, Int} = (agent_type, Int(population_size))
-        return new{S1, S2, L, A}(agent_type, population_size, game, graphmodel, starting_condition_fn_name, stopping_condition_fn_name, parameters, variables, arrays)
+        return new{S1, S2, L, A}(agent_type, population_size, game, graphmodel_fn_var, starting_condition_fn_var, stopping_condition_fn_var, parameters, variables, arrays)
     end
 end
 
@@ -53,12 +54,6 @@ Get the agent type (<:AbstractAgent) used in the model.
 """
 agent_type(model::Model) = getfield(model, :agent_type)
 
-"""
-    population_size(model::Model)
-
-Get the population size used in the model.
-"""
-population_size(model::Model) = getfield(model, :population_size)
 
 
 #Game
@@ -114,12 +109,24 @@ interaction_fn(model::Model) = interaction_fn(game(model))
 
 
 # GraphModel
-"""
-    graphmodel(model::Model)
+# """
+#     graphmodel(model::Model)
 
-Get the GraphModel instance in the model.
+# Get the GraphModel instance in the model.
+# """
+# graphmodel(model::Model) = getfield(model, :graphmodel)
+
 """
-graphmodel(model::Model) = getfield(model, :graphmodel)
+    population_size(model::Model)
+
+Get the population size used in the model.
+"""
+population_size(model::Model) = getfield(model, :population_size)
+
+
+graphmodel_fn_var(model::Model) = getfield(model, :graphmodel_fn_var)
+graphmodel_fn_name(model::Model) = string(graphmodel_fn_var(model))
+graphmodel_fn(model::Model) = getfield(Registry.GraphModels, graphmodel_fn_var(model))
 
 
 """
@@ -128,9 +135,9 @@ graphmodel(model::Model) = getfield(model, :graphmodel)
 Generate a graph from the model.
 """
 function generate_graph(model::Model)::Graphs.SimpleGraph
-    graph::Graphs.SimpleGraph = graphmodel_fn(graphmodel(model))(model, args(graphmodel(model))...; kwargs(graphmodel(model))...)
+    graph::Graphs.SimpleGraph = graphmodel_fn(model)(model)
     if Graphs.ne(graph) == 0 #NOTE: we aren't considering graphs with no edges (obviously). Does it even make sense to consider graphs with more than one component?
-        return generate_graph(model)
+        return generate_graph(graphmodel)
     end
     return graph
 end
@@ -138,33 +145,39 @@ end
 
 
 """
-    starting_condition_fn_name(model::Model)
+    starting_condition_fn_var(model::Model)
 
-Get the 'starting_condition_fn_name' field.
+Get the 'starting_condition_fn_var' field.
 """
-starting_condition_fn_name(model::Model) = getfield(model, :starting_condition_fn_name)
+starting_condition_fn_var(model::Model) = getfield(model, :starting_condition_fn_var)
+
+starting_condition_fn_name(model::Model) = string(starting_condition_fn_var(model))
+
 
 """
     starting_condition_fn(model::Model)
 
-Get the user-defined starting condition function which correlates to the String stored in the 'starting_condition_fn_name' field.
+Get the user-defined starting condition function which correlates to the String stored in the 'starting_condition_fn_var' field.
 """
-starting_condition_fn(model::Model) = getfield(Registry.StartingConditions, Symbol(starting_condition_fn_name(model)))
+starting_condition_fn(model::Model) = getfield(Registry.StartingConditions, starting_condition_fn_var(model))
 
 
 """
-    stopping_condition_fn_name(model::Model)
+    stopping_condition_fn_var(model::Model)
 
-Get the 'stopping_condition_fn_name' field.
+Get the 'stopping_condition_fn_var' field.
 """
-stopping_condition_fn_name(model::Model) = getfield(model, :stopping_condition_fn_name)
+stopping_condition_fn_var(model::Model) = getfield(model, :stopping_condition_fn_var)
+
+stopping_condition_fn_name(model::Model) = string(stopping_condition_fn_var(model))
+
 
 """
     stopping_condition_fn(model::Model)
 
 Get the user-defined stopping condition function which correlates to the String stored in the 'stopping_condition_fn' field.
 """
-stopping_condition_fn(model::Model) = getfield(Registry.StoppingConditions, Symbol(stopping_condition_fn_name(model)))
+stopping_condition_fn(model::Model) = getfield(Registry.StoppingConditions, stopping_condition_fn_var(model))
 
 """
     get_enclosed_stopping_condition_fn(model::Model)

@@ -14,7 +14,7 @@ export
     strategies,
     random_strategy,
 
-    GraphModel,
+    # GraphModel,
 
     Model,
     model,
@@ -65,7 +65,7 @@ import
     
 
 include("games.jl")
-include("interactionmodels.jl")
+# include("interactionmodels.jl")
 include("agents.jl")
 include("agentgraph.jl")
 include("model.jl")

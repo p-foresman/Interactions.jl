@@ -9,18 +9,17 @@ include("games.jl")
 const to = TimerOutput()
 
 game = Game("Bargaining Game", [(0, 0) (0, 0) (70, 30); (0, 0) (50, 50) (50, 30); (30, 70) (30, 50) (30, 30)], "play_game!")
-const m = Model(Interactions.Types.Agent, 10, game, GraphModel(:complete), "fractious_starting_condition", "partially_reinforced_equity_stopping_condition";
-                parameters=Parameters(:memory_length=>10, :error_rate=>0.1),
+const m2 = Model(Interactions.Types.Agent, 10, game, :erdos_renyi, :fractious_starting_condition, :partially_reinforced_equity_stopping_condition;
+                parameters=Parameters(:memory_length=>10, :error_rate=>0.1, :λ=>5),
                 variables=Variables(:period_count=>0),
                 arrays=Arrays(:opponent_strategy_recollection=>zeros.(Float32, [3, 3]),
                               :opponent_strategy_probabilities=>zeros.(Float32, [3, 3]),
                               :expected_utilities=>zeros.(Float32, [3, 3]))
                 )
-const s = State(m)
+const s = State(m2)
 @btime simulate(m)
-simulate(m; samples=1)
+simulate(m2; samples=1)
 
-const m2 = Model(Interactions.Types.Agent, 20, game, GraphModel("complete"), "fractious_starting_condition", "partially_reinforced_equity_stopping_condition"; parameters=Parameters(:memory_length=>10, :error_rate=>0.1), variables=Variables(:period_count=>0))
 
 const m4 = Model(Game("Bargaining Game", [(0, 0) (0, 0) (70, 30); (0, 0) (50, 50) (50, 30); (30, 70) (30, 50) (30, 30)]),
                     p,

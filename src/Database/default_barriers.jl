@@ -71,14 +71,14 @@ insert_group(::Nothing, ::String) = throw(NoDatabaseError())
 insert_game(game::Types.Game) = insert_game(Interactions.MAIN_DB(), game)
 insert_game(::Nothing, ::Types.Game) = throw(NoDatabaseError())
 
-insert_graphmodel(graphmodel::Types.GraphModel) = insert_graphmodel(Interactions.MAIN_DB(), graphmodel)
-insert_graphmodel(::Nothing, ::Types.GraphModel) = throw(NoDatabaseError())
+# insert_graphmodel(graphmodel::Types.GraphModel) = insert_graphmodel(Interactions.MAIN_DB(), graphmodel)
+# insert_graphmodel(::Nothing, ::Types.GraphModel) = throw(NoDatabaseError())
 
 insert_model(model::Types.Model; model_id::Union{Nothing, Integer}=nothing) = insert_model(Interactions.MAIN_DB(), model; model_id=model_id) #returns model_id::Int
 insert_model(::Nothing, ::Types.Model; kwargs...) = throw(NoDatabaseError()) #NOTE: return nothing here instead of model_id since no database is configured. (do we want throw(NoDatabaseError()) instead?) could make custom NoDB type to return!
 # try_insert_model(model::Model; model_id::Union{Nothing, Integer}=nothing) = insert_model(Interactions.MAIN_DB(), model, model_id=model_id)
 
-insert_simulation(state::Types.State, model_id::Union{Integer, Nothing}, sim_group_id::Union{Integer, Nothing} = nothing; full_store::Bool=true) = insert_simulation(Interactions.MAIN_DB(), state, model_id, sim_group_id; full_store=full_store)
+insert_simulation(state::Types.State, sim_group_id::Union{Integer, Nothing} = nothing; full_store::Bool=true) = insert_simulation(Interactions.MAIN_DB(), state, sim_group_id; full_store=full_store)
 insert_simulation(::Nothing, args...; kwargs...) = throw(NoDatabaseError())
 
 has_incomplete_simulations() = has_incomplete_simulations(Interactions.MAIN_DB())

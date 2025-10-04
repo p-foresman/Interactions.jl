@@ -109,8 +109,8 @@ end
 function init(db::SQLiteDB)
     begin_transaction(db)
     execute(db, load_sql_file("sqlite/sql/games/init.sql"))
-    execute(db, load_sql_file("sqlite/sql/graphmodels/init.sql"))
-    execute(db, load_sql_file("sqlite/sql/graphmodels/graphmodel_parameters/init.sql"))
+    # execute(db, load_sql_file("sqlite/sql/graphmodels/init.sql"))
+    # execute(db, load_sql_file("sqlite/sql/graphmodels/graphmodel_parameters/init.sql"))
     execute(db, load_sql_file("sqlite/sql/models/init.sql"))
     execute(db, load_sql_file("sqlite/sql/models/model_parameters/init.sql"))
     execute(db, load_sql_file("sqlite/sql/groups/init.sql"))
@@ -140,27 +140,27 @@ function insert_game(db_info::SQLiteInfo, game::Types.Game)
 end
 
 
-function insert_graphmodel(db::SQLiteDB, graphmodel::Types.GraphModel; new_transaction::Bool=true)
-    new_transaction && begin_transaction(db)
+# function insert_graphmodel(db::SQLiteDB, graphmodel::Types.GraphModel; new_transaction::Bool=true)
+#     new_transaction && begin_transaction(db)
     
-    #insert graphmodel
-    graphmodel_id::Int = query(db, load_sql_file("sqlite/sql/graphmodels/insert.sql"), (Types.graphmodel_fn_name(graphmodel), Types.displayname(graphmodel), serialize_to_vec(graphmodel)))[1, :id]
+#     #insert graphmodel
+#     graphmodel_id::Int = query(db, load_sql_file("sqlite/sql/graphmodels/insert.sql"), (Types.graphmodel_fn_name(graphmodel), Types.displayname(graphmodel), serialize_to_vec(graphmodel)))[1, :id]
     
-    #insert each graphmodel parameter referencing the previously inserted graphmodel
-    for (param, val) in pairs(Types.parameters(graphmodel))
-        execute(db, load_sql_file("sqlite/sql/graphmodels/graphmodel_parameters/insert.sql"), (graphmodel_id, string(param), string(typeof(val)), string(val)))
-    end
+#     #insert each graphmodel parameter referencing the previously inserted graphmodel
+#     for (param, val) in pairs(Types.parameters(graphmodel))
+#         execute(db, load_sql_file("sqlite/sql/graphmodels/graphmodel_parameters/insert.sql"), (graphmodel_id, string(param), string(typeof(val)), string(val)))
+#     end
 
-    new_transaction && commit_transaction(db)
-    return graphmodel_id
-end
+#     new_transaction && commit_transaction(db)
+#     return graphmodel_id
+# end
 
-function insert_graphmodel(db_info::SQLiteInfo, graphmodel::Types.GraphModel)
-    db = DB(db_info)
-    id = insert_graphmodel(db, graphmodel)
-    close(db)
-    return id
-end
+# function insert_graphmodel(db_info::SQLiteInfo, graphmodel::Types.GraphModel)
+#     db = DB(db_info)
+#     id = insert_graphmodel(db, graphmodel)
+#     close(db)
+#     return id
+# end
 
 function insert_model(db::SQLiteDB, model::Types.Model; model_id::Union{Nothing, Integer}=nothing)
     begin_transaction(db)
@@ -169,7 +169,7 @@ function insert_model(db::SQLiteDB, model::Types.Model; model_id::Union{Nothing,
     game_id = insert_game(db, Types.game(model))
 
     #insert graphmodel
-    graphmodel_id = insert_graphmodel(db, Types.graphmodel(model); new_transaction=false)
+    # graphmodel_id = insert_graphmodel(db, Types.graphmodel(model); new_transaction=false)
 
     #insert model referencing game and graphmodel
     model_id::Int = query(db,
@@ -179,7 +179,7 @@ function insert_model(db::SQLiteDB, model::Types.Model; model_id::Union{Nothing,
             string(Types.agent_type(model)),
             Types.population_size(model),
             game_id,
-            graphmodel_id,
+            Types.graphmodel_fn_name(model),
             Types.starting_condition_fn_name(model),
             Types.stopping_condition_fn_name(model),
             serialize_to_vec(model)
@@ -247,9 +247,9 @@ function insert_simulation(db::SQLiteDB, state::Types.State, group_id::Union{Int
     return simulation_uuid
 end
 
-function insert_simulation(db_info::SQLiteInfo, state::Types.State, model_id::Integer, group_id::Union{Integer, Nothing} = nothing; full_store::Bool=true) #state_bin will be nothing if store_state=false in config
+function insert_simulation(db_info::SQLiteInfo, state::Types.State, group_id::Union{Integer, Nothing} = nothing; full_store::Bool=true) #state_bin will be nothing if store_state=false in config
     db = DB(db_info)
-    simulation_uuid = insert_simulation(db, state, model_id, group_id; full_store=full_store)
+    simulation_uuid = insert_simulation(db, state, group_id; full_store=full_store)
     close(db)
     return simulation_uuid
 end

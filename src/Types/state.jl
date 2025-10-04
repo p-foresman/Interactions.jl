@@ -181,73 +181,6 @@ Get the ConnectedComponent object indexed by component_number in an AgentGraph i
 """
 components(state::State, component_number::Integer) = components(agentgraph(state), component_number)
 
-# """
-#     edges(state::State)
-
-# Get all of the edges/relationships in the model.
-# """
-# edges(state::State) = edges(agentgraph(state))
-
-# """
-#     edges(state::State, edge_number::Integer)
-
-# Get the edge indexed by the edge_number in the model.
-# """
-# edges(state::State, edge_number::Integer) = edges(agentgraph(state), edge_number)
-
-# """
-#     random_edge(state::State)
-
-# Get a random edge/relationship in the model.
-# """
-# random_edge(state::State) = random_edge(agentgraph(state))
-
-# """
-#     component_vertex_sets(state::State)
-
-# Get all of the connected component vertex sets that reside in the model's AgentGraph instance.
-# Returns a vector of vectors, each containing the vertices in each separated component.
-# """
-# component_vertex_sets(state::State) = component_vertex_sets(agentgraph(state))
-
-# """
-#     component_vertex_sets(state::State, component_number::Integer)
-
-# Get the connected component vertex set indexed by component_number in the model's AgentGraph instance.
-# Returns a vector of Int.
-# """
-# component_vertex_sets(state::State, component_number::Integer) = component_vertex_sets(agentgraph(state), component_number)
-
-# """
-#     component_edge_sets(state::State)
-
-# Get all of the connected component edge sets that reside in the model's AgentGraph instance.
-# Returns a vector of vectors, each containing the edges in each separated component.
-# """
-# component_edge_sets(state::State) = component_edge_sets(agentgraph(state))
-
-# """
-#     component_edge_sets(state::State, component_number::Integer)
-
-# Get the connected component edge set indexed by component_number in the model's AgentGraph instance.
-# Returns a vector of Graphs.SimpleEdge instances.
-# """
-# component_edge_sets(state::State, component_number::Integer) = component_edge_sets(agentgraph(state), component_number)
-
-# """
-#     component_edge_sets(state::State, component_number::Integer, edge_number::Integer)
-
-# Get the edge indexed by edge_number in the connected component edge set indexed by component_number in the model's AgentGraph instance.
-# Returns a Graphs.SimpleEdge instance.
-# """
-# component_edge_sets(state::State, component_number::Integer, edge_number::Integer) = component_edge_sets(agentgraph(state), component_number, edge_number)
-
-# """
-#     random__component_edge(state::State, component_number::Integer)
-
-# Get a random edge/relationship in the component specified by component_number in the model's AgentGraph instance.
-# """
-# random_component_edge(state::State, component_number::Integer) = rand(component_edge_sets(agentgraph(state), component_number))
 
 """
     number_hermits(state::State)
@@ -415,35 +348,8 @@ function reset_arrays!(state::State)
 end
 
 
-# """
-#     user_variables(state::State)
-
-# Get the extra user-defined State variables.
-# """
-# user_variables(state::State) = getfield(state, :user_variables)
-
-# """
-#     user_variables(state::State, variable::Symbol)
-
-# Get the value of the specified user-defined variable.
-# """
-# user_variables(state::State, variable::Symbol) = user_variables(state)[variable]
-
-# """
-#     set_user_variable!(state::State, variable::Symbol, value::)
-
-# Get the extra user-defined State variables.
-# """
-# function set_user_variable!(state::State, variable::Symbol, value::T) where {T}
-#     @assert user_variables(state)[variable] isa T "Type of user variable must remain constant!"
-#     user_variables(state)[variable] = value
-# end
-
-
 rng_state_str(state::State) = getfield(state, :rng_state_str)
-# rng_state(state::State) = JSON3.read(rng_state_str(state), Random.Xoshiro)
-rng_state!(state::State) = setfield!(state, :rng_state_str, JSON3.write(copy(Random.default_rng())))
-# rng_state_str!(state::State, rng_state_str::String) =  setfield!(state, :rng_state_str, rng_state_str) #NOTE: dont want this method
+rng_state!(state::State) = setfield!(state, :rng_state_str, JSON3.write(copy(Random.default_rng()))) #NOTE: could serialize to bin
 
 function restore_rng_state(state::State)
     if !isnothing(rng_state_str(state))
@@ -451,41 +357,3 @@ function restore_rng_state(state::State)
     end
     return nothing
 end
-
-# """
-#     initialize_graph!(model::Model)
-
-# Initialize the AgentGraph instance for the model based on parameters of other model components.
-# """
-# initialize_graph!(model::Model) = initialize_graph!(graphmodel(model), game(model), parameters(model), startingcondition(model)) #parameter spreading necessary for multiple dispatch
-
-# """
-#     initialize_stopping_condition!(state::State, model::Model)
-
-# Initialize the stopping condition values for the model based on parameters of the model's Parameters instance and properties of the AgentGraph instance.
-# """
-# initialize_stopping_condition!(state::State, model::Model) = initialize_stopping_condition!(stoppingcondition(model), parameters(model), agentgraph(state)) #parameter spreading necessary for multiple dispatch
-
-
-# """
-#     reset_agent_graph!(state::State, model::Model)
-
-# Reset the AgentGraph of the model state.
-# """
-# reset_agent_graph!(state::State, model::Model) = initialize_agent_data!(agentgraph(state), game(model), parameters(model), startingcondition(model))
-
-# """
-#     reset_model!(model::Model)
-
-# Reset the model to its initial state.
-# """
-# function reset_state!(state::State, model::Model) #NOTE: THIS DOESNT WORK BECAUSE OF IMMUTABLE STRUCT (could work within individual fields)
-#     reset_agent_graph!(state, model)
-#     initialize_stopping_condition!(state, model)
-#     reset_arrays!(state)
-#     return nothing
-# end
-
-# function regenerate_state(model::Model) #can just call State(model)
-#     return State(model)
-# end

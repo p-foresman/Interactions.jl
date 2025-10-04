@@ -1,4 +1,4 @@
-# This file contains all global StructType assignments required for JSON3 functionality
+# This file contains all global StructType assignments required for JSON3 functionality #NOTE: can we eliminate this?
 
 using StructTypes
 

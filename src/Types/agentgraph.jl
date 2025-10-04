@@ -31,26 +31,26 @@ function connected_component_vertices(g::Graphs.AbstractGraph{T}) where {T}
     return filter(component -> length(component) > 1, Graphs.connected_components(g))
 end
 
-# function connected_component_sets(g::Graphs.AbstractGraph{T}) where {T}
-#     component_vertex_sets = connected_component_vertices(g)
-#     # component_edges = fill([], length(components))
-#     component_count = length(component_vertex_sets)
-#     component_edge_sets::Vector{Vector{Graphs.SimpleEdge{Int}}} = []
-#     for vertex_set in component_vertex_sets
-#         edge_set::Vector{Graphs.SimpleEdge{Int}} = []
-#         for edge in Graphs.edges(g)
-#             if edge.src in vertex_set && edge.dst in vertex_set
-#                 push!(edge_set, edge)
-#             end
-#         end
-#         push!(component_edge_sets, edge_set)
-#     end
-#     return component_vertex_sets, component_edge_sets, component_count
-# end
+function connected_component_sets(g::Graphs.AbstractGraph{T}) where {T}
+    component_vertex_sets = connected_component_vertices(g)
+    # component_edges = fill([], length(components))
+    component_count = length(component_vertex_sets)
+    component_edge_sets::Vector{Vector{Graphs.SimpleEdge{Int}}} = []
+    for vertex_set in component_vertex_sets
+        edge_set::Vector{Graphs.SimpleEdge{Int}} = []
+        for edge in Graphs.edges(g)
+            if edge.src in vertex_set && edge.dst in vertex_set
+                push!(edge_set, edge)
+            end
+        end
+        push!(component_edge_sets, edge_set)
+    end
+    return component_vertex_sets, component_edge_sets, component_count
+end
 
-# function connected_component_edges(g::Graphs.AbstractGraph{T}) where {T}
-#     return connected_component_sets(g)[2]
-# end
+function connected_component_edges(g::Graphs.AbstractGraph{T}) where {T}
+    return connected_component_sets(g)[2]
+end
 
 """
     Interactions.AgentGraph{N, E, C} <: Graphs.AbstractGraph{Int}
@@ -72,7 +72,7 @@ struct ConnectedComponent{V, E}
         V = length(vertices)
         E = length(edges)
         d = E / ((V * (V-1)) / 2) # num edges / num possible edges
-        matches_per_period = Int(ceil(d * V / 2)) #ceil to ensure at least one match (unless d=0, in which case nothing would happen regardless) #NOTE: fraction of N choose 2
+        matches_per_period = Int(ceil(d * V / 2)) #ceil to ensure at least one match (unless d=0, in which case nothing would happen regardless) #NOTE: this should be user-defined
         return new{V, E}(VertexSet{V}(vertices), matches_per_period) # matches = (periods * d * N) / 2
     end
 end
@@ -89,8 +89,7 @@ matches_per_period(component::ConnectedComponent) = getfield(component, :matches
 
 
 struct AgentGraph{N, E, C, A} <: Graphs.AbstractGraph{Int}
-    # graphmodel::GraphModel #NOTE: should add this here and make the constructor more robust!
-    graph::Graph #NOTE: this is already stored in Model, do we need to store it here? probably should still
+    graph::Graph
     agents::AgentSet{N, A}
     components::ComponentSet{C} #NOTE: different ConnectedComponents will have different V and E static params, meaning that getting a specific component from this set wont be type stable. Doesn't account for a huge change in practice with one component, but could find a way to fix or optimize by not using a component set if there is only one component
     number_hermits::Int
@@ -107,8 +106,8 @@ struct AgentGraph{N, E, C, A} <: Graphs.AbstractGraph{Int}
         #         ishermit!(agents[vertex], true)
         #     end
         # end
-        # vertex_sets, edge_sets, C = connected_component_sets(graph)
-        vertex_sets = filter(component -> length(component) > 1, Graphs.connected_components(graph)) #don't want to store hermits in components since they don't interact
+        vertex_sets, edge_sets, C = connected_component_sets(graph)
+        # vertex_sets = filter(component -> length(component) > 1, Graphs.connected_components(graph)) #don't want to store hermits in components since they don't interact
         components = []
         for component_number in 1:C
             # push!(components, ConnectedComponent(vertex_sets[component_number], edge_sets[component_number]))
@@ -120,8 +119,8 @@ struct AgentGraph{N, E, C, A} <: Graphs.AbstractGraph{Int}
     function AgentGraph(graph::Graph, agents::AgentSet{N, A}) where {N, A}
         @assert N == Graphs.nv(graph) "graph vertex count must equal the number of agents supplied"
         E = Graphs.ne(graph)
-        # vertex_sets, edge_sets, C = connected_component_sets(graph)
-        vertex_sets = filter(component -> length(component) > 1, Graphs.connected_components(graph)) #don't want to store hermits in components since they don't interact
+        vertex_sets, edge_sets, C = connected_component_sets(graph)
+        # vertex_sets = filter(component -> length(component) > 1, Graphs.connected_components(graph)) #don't want to store hermits in components since they don't interact
         components = []
         for component_number in 1:C
             push!(components, ConnectedComponent(vertex_sets[component_number], edge_sets[component_number]))

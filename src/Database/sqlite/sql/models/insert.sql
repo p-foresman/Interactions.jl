@@ -4,7 +4,7 @@ INSERT OR IGNORE INTO models
     agent_type,
     population_size,
     game_id,
-    graphmodel_id,
+    graphmodel,
     starting_condition,
     stopping_condition,
     model_bin

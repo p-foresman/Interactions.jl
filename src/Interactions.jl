@@ -23,7 +23,7 @@ export
     strategies,
     random_strategy,
 
-    GraphModel,
+    # GraphModel,
 
     Model,
     model,
