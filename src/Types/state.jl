@@ -1,15 +1,5 @@
 #NOTE: Should I separate the database stuff into an inner type? (model_id, prev_simulation_uuid, rng_state_str)
 
-# mutable struct StateMutables #this increased time
-#     period::Int128 #NOTE: should this be added? if so, must make struct mutable and add const before agentgraph and preallocatedarrays
-#     complete::Bool
-#     timedout::Bool # used to determine whether a periodic push or a full exit is necessary
-#     prev_simulation_uuid::Union{String, Nothing} #needs to be updated when pushing to db periodically
-#     rng_state_str::Union{String, Nothing} #NOTE: change to Xoshiro down the line? Updated before being pushed to db
-
-#     StateMutables() = new(Int128(0), false, false, nothing, nothing)
-# end
-
 mutable struct State{S1, S2, L, A, V, E, C}
     const model::Model{S1, S2, L, A} # {S1, S2}
     const agentgraph::AgentGraph{V, E, C, A}
@@ -17,10 +7,8 @@ mutable struct State{S1, S2, L, A, V, E, C}
     const variables::Variables #copied from model (model should never be updated!)
     const arrays::Arrays #copied from model (model should never be updated!)
     # did_interact::Bool # did the players interact yet?
-    # const preallocatedarrays::PreAllocatedArrays #NOTE: PreAllocatedArrays currently 2 players only
     const model_id::Union{Int, Nothing}
     const random_seed::Union{Int, Nothing}
-    # mutables::StateMutables
     period::Int128
     complete::Bool
     timedout::Bool # used to determine whether a periodic push or a full exit is necessary
@@ -34,16 +22,11 @@ end
 Generates an uninitialized State instance.
 """
 function BlankState(model::Model{S1, S2, L, A}; model_id::Union{Int, Nothing}=nothing, random_seed::Union{Int, Nothing}=nothing) where {S1, S2, L, A}
-    # agentgraph::AgentGraph = AgentGraph(model)
     agentgraph::AgentGraph = AgentGraph(generate_graph(model), A)
     V = num_vertices(agentgraph)
     E = num_edges(agentgraph)
     C = num_components(agentgraph)
     players = Vector{Agent}([Agent() for _ in 1:2]) #NOTE: hard coded to two players (this should be SVector)
-    # preallocatedarrays::PreAllocatedArrays = PreAllocatedArrays(game(model))
-
-    # all_user_variables = merge(Interactions.user_variables(parameters(model)), user_variables) #user_variables defined here should go last so that values overwrite defaults if applicable!
-    # is_stopping_condition_test = parameters(model).stoppingcondition(model)
     return State{S1, S2, L, A, V, E, C}(model, agentgraph, players, deepcopy(variables(model)), deepcopy(arrays(model)), model_id, random_seed, Int128(0), false, false, nothing, nothing)
 end
 
@@ -145,12 +128,6 @@ Get the graph (Graphs.SimpleGraph{Int}) in the model.
 """
 graph(state::State) = graph(agentgraph(state))
 
-# """
-#     adjacency_matrix_str(state::State)
-
-# Get the adjacency matrix in a string for the graph of the given Model
-# """
-# adjacency_matrix_str(state::State) = adjacency_matrix_str(graph(state))
 
 """
     agents(state::State)
@@ -190,10 +167,6 @@ Get the number of hermits (vertecies with degree=0) in the model.
 number_hermits(state::State) = number_hermits(agentgraph(state))
 
 
-
-
-#PreAllocatedArrays
-
 """
     players(state::State)
 
@@ -231,11 +204,6 @@ function set_players!(state::State, component::ConnectedComponent)
     v = rand(vertices(component))
     player!(state, 1, v)
     player!(state, 2, rand(Graphs.neighbors(graph(state), v)))
-    # edge::Graphs.SimpleEdge{Int} = random_edge(component)
-    # vertex_list::Vector{Int} = shuffle!([src(edge), dst(edge)]) #NOTE: is the shuffle necessary here?
-    # for player_number in 1:2 #NOTE: this will always be 2. Should I just optimize for two player games?
-    #     player!(state, player_number, vertex_list[player_number])
-    # end
     return nothing
 end
 
@@ -243,14 +211,8 @@ function set_players!(state::State)
     v = rand(agentgraph(state).vertices)
     player!(state, 1, v)
     player!(state, 2, rand(neighbors(graph(state), v)))
-    # edge::Graphs.SimpleEdge{Int} = random_edge(component)
-    # vertex_list::Vector{Int} = shuffle!([src(edge), dst(edge)]) #NOTE: is the shuffle necessary here?
-    # for player_number in 1:2 #NOTE: this will always be 2. Should I just optimize for two player games?
-    #     player!(state, player_number, vertex_list[player_number])
-    # end
     return nothing
 end
-
 
 
 # Parameters

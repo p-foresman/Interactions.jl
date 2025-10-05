@@ -1,36 +1,38 @@
-# settings config for Interactions
+# ===================================
+# Settings config for Interactions.jl
+# ===================================
 
+# turn random seed on/off. If on, simulations will use the value assigned to the 'random_seed' variable
 use_seed = false
 random_seed = 1234
+
+# specify the number of local distributed processes
 processes = 1
 
+# specify how long (in seconds) a simulation should run before timing out. If a simulation times out, the process will be killed and exit with the specified exit code.
 timeout = 3600
 timeout_exit_code = 0 #0 to not exit?
-capture_interval = 0 #how often (in terms of periods) to capture simulation state data
 
-figure_dirpath = "" #defined which directory figures should be created in (if relative, relative to project root) #NOTE: could have one of these per database?
+# specify how often (in terms of periods) to capture simulation state data
+capture_interval = 0
 
-# sqlite database is provided by default
+# define which directory figures should be created in (if relative path, relative to project root)
+figure_dirpath = ""
+
+
+# Specify database(s) to use with dot notation. Each database entry stores required information to access the database
+
 [databases]
-# use = true
-selected = "" #"sqlite.default"
+selected = "sqlite.default" # leave empty to use no database
 attached = []
-full_store = true #set to false to save partial information for storage efficiency. If false, simulations stored in the database will not be reproducable/continuable
-# data_script = "" #supply to initialize database with specific data
+full_store = true # set to false to save partial information for storage efficiency. If false, simulations stored in the database will not be reproducable/continuable
 
 [databases.sqlite.default]
 path = "Interactions.sqlite"
 
-# [databases.sqlite.checkpoint]
-# path = "checkpoint.sqlite"
-
 # add more sqlite databases below. For example:
 # [databases.sqlite.my_sqlite_db]
 # path = "my/sqlite/database/path.sqlite"
-
-
-# postgres database must be configured by the user
-# [databases.postgres.my_postgres_db]
 
 # configure your own postgres databases below. For example:
 # [databases.postgres.my_postgres_db]

@@ -9,17 +9,10 @@ const RelationshipSet{E} = SVector{E, Relationship}
 
 const Graph = Graphs.SimpleGraph{Int} #NOTE: probably want to get rid of this
 
-# """
-#     Graph(matrix_str::String)
 
-# Create a Graphs.SimpleGraph{Int} from a matrix string.
-# """
-# SimpleGraph{Int}(matrix_str::String) = Graph(eval(Meta.parse(matrix_str))) # can call Graph(matrix_str::String) and this will be called ()
-
-# adjacency_matrix_str(graph::Graph) = string(Matrix(adjacency_matrix(graph)))
 function number_hermits(graph::Graph)
     number_hermits = 0
-    for vertex in Graphs.vertices(graph) #could make graph-type specific multiple dispatch so this only needs to happen for ER and SBM (otherwise num_hermits=0)
+    for vertex in Graphs.vertices(graph) #NOTE: could make graph-type specific multiple dispatch so this only needs to happen for ER and SBM (otherwise num_hermits=0)
         if iszero(Graphs.degree(graph, vertex))
             number_hermits += 1
         end
@@ -93,24 +86,15 @@ struct AgentGraph{N, E, C, A} <: Graphs.AbstractGraph{Int}
     agents::AgentSet{N, A}
     components::ComponentSet{C} #NOTE: different ConnectedComponents will have different V and E static params, meaning that getting a specific component from this set wont be type stable. Doesn't account for a huge change in practice with one component, but could find a way to fix or optimize by not using a component set if there is only one component
     number_hermits::Int
-    # vertices::VertexSet{N}
-    # matches_per_period::Int
 
     
     function AgentGraph(graph::Graph, AgentType::Type{<:AbstractAgent})
         N = Graphs.nv(graph)
         E = Graphs.ne(graph)
         agents::AgentSet{N, AgentType} = [AgentType(id=agent_number, is_hermit=iszero(Graphs.degree(graph, agent_number))) for agent_number in 1:N]
-        # for vertex in 1:N #could make graph-type specific multiple dispatch so this only needs to happen for ER and SBM (otherwise num_hermits=0)
-        #     if iszero(Graphs.degree(graph, vertex))
-        #         ishermit!(agents[vertex], true)
-        #     end
-        # end
         vertex_sets, edge_sets, C = connected_component_sets(graph)
-        # vertex_sets = filter(component -> length(component) > 1, Graphs.connected_components(graph)) #don't want to store hermits in components since they don't interact
         components = []
         for component_number in 1:C
-            # push!(components, ConnectedComponent(vertex_sets[component_number], edge_sets[component_number]))
             push!(components, ConnectedComponent(vertex_sets[component_number], edge_sets[component_number]))
         end
 
@@ -120,7 +104,6 @@ struct AgentGraph{N, E, C, A} <: Graphs.AbstractGraph{Int}
         @assert N == Graphs.nv(graph) "graph vertex count must equal the number of agents supplied"
         E = Graphs.ne(graph)
         vertex_sets, edge_sets, C = connected_component_sets(graph)
-        # vertex_sets = filter(component -> length(component) > 1, Graphs.connected_components(graph)) #don't want to store hermits in components since they don't interact
         components = []
         for component_number in 1:C
             push!(components, ConnectedComponent(vertex_sets[component_number], edge_sets[component_number]))
@@ -164,28 +147,6 @@ agents(agentgraph::AgentGraph, agent_number::Integer) = getindex(agents(agentgra
 
 agent_type(::AgentGraph{N, E, C, A}) where {N, E, C, A} = A
 
-# """
-#     edges(agentgraph::AgentGraph)
-
-# Get all of the edges/relationships in an AgentGraph instance.
-# """
-# edges(agentgraph::AgentGraph) = getfield(agentgraph, :edges)
-
-# """
-#     edges(agentgraph::AgentGraph, edge_number::Integer)
-
-# Get the edge indexed by the edge_number in an AgentGraph instance.
-# """
-# edges(agentgraph::AgentGraph, edge_number::Integer) = getindex(edges(agentgraph), edge_number)
-
-# """
-#     random_edge(agentgraph::AgentGraph)
-
-# Get a random edge/relationship in an AgentGraph instance.
-# """
-# random_edge(agentgraph::AgentGraph) = rand(edges(agentgraph))
-
-
 num_vertices(::VertexSet{V}) where {V} = V
 
 """
@@ -204,12 +165,9 @@ Get the ConnectedComponent object indexed by component_number in an AgentGraph i
 components(agentgraph::AgentGraph, component_number::Integer) = getindex(components(agentgraph), component_number)
 
 
-# num_edges(::RelationshipSet{E}) where {E} = E
-
-
 """
     number_hermits(agentgraph::AgentGraph)
 
 Get the number of hermits (vertecies with degree=0) in an AgentGraph instance.
 """
-number_hermits(agentgraph::AgentGraph) = getfield(agentgraph, :number_hermits)#number_hermits(graph(agentgraph))
+number_hermits(agentgraph::AgentGraph) = getfield(agentgraph, :number_hermits)

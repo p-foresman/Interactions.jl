@@ -45,18 +45,6 @@ parameters(graphmodel::GraphModel) = getfield(graphmodel, :params)
 args(graphmodel::GraphModel) = values(parameters(graphmodel))
 kwargs(graphmodel::GraphModel) = getfield(graphmodel, :kwargs)
 
-# const _graphmodel_fn_registry = Vector{Expr}()
-
-# """
-#     @stoppingcondition fn
-
-# A macro used to register user stopping conditions to be used in  This MUST precede any stopping conditions used in a user's simulations.
-# """
-# macro graphmodel(fn)
-#     push!(_graphmodel_fn_registry, fn)
-#     @everywhere eval($fn) #NOTE: could do eval() to evaluate it into the global scope of Interactions instead of Registry.GraphModels
-#     return nothing
-# end
 
 """
     displayname(graphmodel::GraphModel)

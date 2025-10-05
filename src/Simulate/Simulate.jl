@@ -34,7 +34,6 @@ simulate(model::Types.Model; kwargs...) = simulate_supervisor(model; kwargs..., 
 Run a simulation using a model stored in the configured database with the given model_id. The model will be reconstructed to be used in the simulation.
 Note: a database must be configured to use this method and a model with the given model_id must exist in the configured database.
 """
-
 function simulate(model_id::Integer; kwargs...)
     Database.assert_db()
     model = Database.reconstruct_model(model_id) #construct model associated with id
@@ -60,8 +59,7 @@ end
 function simulate(;kwargs...) #NOTE: probably don't want this method for simulation continuation
     Database.assert_db()
     simulation_uuids = Database.get_incomplete_simulation_uuids()
-    # println(simulation_uuids)
-    states = Vector{Types.State}() #NOTE: model needs to be consumed by state!
+    states = Vector{Types.State}()
     for simulation_uuid in simulation_uuids
         push!(states, Database.reconstruct_simulation(simulation_uuid))
     end
@@ -128,7 +126,6 @@ function simulate_worker(jobs::RemoteChannel{Channel{Types.State}}, results::Rem
             Types.restore_rng_state(state)
             
             simulate!(state, timeout, capture_interval; stopping_condition_reached=stopping_condition_reached, start_time=start_time)
-            # @timeit to "simulate!" simulate!(state, timeout, capture_interval; stopping_condition_reached=stopping_condition_reached, start_time=start_time, to=to)
 
             if Types.iscomplete(state) || Types.istimedout(state)
                 println(" --> periods elapsed: $(Types.period(state))")

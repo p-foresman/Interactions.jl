@@ -5,13 +5,25 @@ A type to store the values for a parameter sweep. Can be used to populate a data
 """
 struct ModelGenerator <: Generator
     game::Types.Game
-    agent_types::Vector{Type{<:Types.AbstractAgent}}
     population_sizes::Vector{Int}
-    graphmodel::Symbol # can only generate with one graph model per model generator for now due to the implementation of parameters
-    starting_condition::Vector{Tuple{String, Types.Parameters}} # ("starting_condition_name", Parameters(var1=>'val1', var2=>'val2'))
-    stopping_condition::Vector{Tuple{String, Types.Parameters}} # ("stopping_condition_name", Parameters(var1=>'val1', var2=>'val2'))
-    parameters::Dict{Symbol, Vector{Float64}} # this is what we're sweeping over
+    memory_lengths::Vector{Int}
+    error_rates::Vector{Float64}
+    starting_conditions::Vector{Tuple{String, Types.Parameters}} # ("starting_condition_name", Parameters(var1=>'val1', var2=>'val2'))
+    stopping_conditions::Vector{Tuple{String, Types.Parameters}} # ("stopping_condition_name", Parameters(var1=>'val1', var2=>'val2'))
+    graphmodels::Vector{GraphModelGenerator}
     size::Int
+    # function ModelGenerator(
+    #     game::Game,
+    #     population_sizes::Vector{Int},
+    #     memory_lengths::Vector{Int},
+    #     error_rates::Vector{Float64},
+    #     starting_conditions::Vector{Tuple{String, Parameters}},
+    #     stopping_conditions::Vector{Tuple{String, Parameters}},
+    #     graphmodels::Vector{GraphModelGenerator}
+    #     )
+    #     sz = sum(Interactions.volume(population_sizes, memory_lengths, error_rates, starting_conditions, stopping_conditions) .* size.(graphmodels))
+    #     return new(game, population_sizes, memory_lengths, error_rates, starting_conditions, stopping_conditions, graphmodels, sz)
+    # end
 end
 
 function ModelGenerator(game::Types.Game,

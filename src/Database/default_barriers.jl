@@ -12,14 +12,6 @@ Generate a SQL query for a QueryParams instance (based on configured database ty
 """
 sql(qp::QueryParams) = sql(Interactions.DATABASE(), qp)
 sql(::Nothing, ::QueryParams) = throw(NoDatabaseError())
-# function sql(qp::QueryParams)
-#     if isempty(Interactions.SETTINGS.query)
-#         return sql(Interactions.SETTINGS.database, qp)
-#     else
-#         return sql(Interactions.SETTINGS.query, qp)
-#     end
-# end
-
 
 """
     execute(sql::SQL)
@@ -36,13 +28,6 @@ Query the configured database using the SQL (String) provided. Returns a DataFra
 """
 query(sql::SQL) = query(Interactions.DATABASE(), sql)
 query(::Nothing, ::SQL) = throw(NoDatabaseError())
-# function query(sql::SQL)
-#     if isempty(Interactions.SETTINGS.query)
-#         return query(Interactions.SETTINGS.database, sql)
-#     else
-#         return query(Interactions.SETTINGS.query, sql)
-#     end
-# end
 
 
 """
@@ -53,13 +38,8 @@ Query the configured database and attached databases using the QueryParams provi
 query(qp::QueryParams; kwargs...) = query(Interactions.DATABASE(), qp; kwargs...)
 query(::Nothing, ::QueryParams) = throw(NoDatabaseError())
 
-#query(qp::Query_simulations; ensure_samples::Bool=false) = query(Interactions.DATABASE(), qp; ensure_samples=ensure_samples)
-
 query_timeseries(simulation_uuid::String, limit::Int) = query_timeseries(Interactions.DATABASE(), simulation_uuid, limit)
 
-# begin_transaction() = begin_transaction(Interactions.SETTINGS.database)
-# close(db::SQLiteDB) = SQLite.close(db)
-# commit_transaction(db::SQLiteDB) = SQLite.commit(db)
 
 init() = init(Interactions.MAIN_DB())
 init(::Nothing) = throw(NoDatabaseError())
@@ -76,7 +56,6 @@ insert_game(::Nothing, ::Types.Game) = throw(NoDatabaseError())
 
 insert_model(model::Types.Model; model_id::Union{Nothing, Integer}=nothing) = insert_model(Interactions.MAIN_DB(), model; model_id=model_id) #returns model_id::Int
 insert_model(::Nothing, ::Types.Model; kwargs...) = throw(NoDatabaseError()) #NOTE: return nothing here instead of model_id since no database is configured. (do we want throw(NoDatabaseError()) instead?) could make custom NoDB type to return!
-# try_insert_model(model::Model; model_id::Union{Nothing, Integer}=nothing) = insert_model(Interactions.MAIN_DB(), model, model_id=model_id)
 
 insert_simulation(state::Types.State, sim_group_id::Union{Integer, Nothing} = nothing; full_store::Bool=true) = insert_simulation(Interactions.MAIN_DB(), state, sim_group_id; full_store=full_store)
 insert_simulation(::Nothing, args...; kwargs...) = throw(NoDatabaseError())

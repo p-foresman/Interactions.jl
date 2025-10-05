@@ -1,7 +1,6 @@
 const PayoffMatrix{S1, S2, L} = SMatrix{S1, S2, Tuple{Int, Int}, L} #reducing to {S1, S2} results in large slowdown
 
 
-
 """
     Game{S1, S2, L}
 
@@ -34,20 +33,6 @@ struct Game{S1, S2, L} #NOTE: ensure symmetric?? Make multiple types of games. A
         static_payoff_matrix = PayoffMatrix{S1, S2, L}(payoff_matrix)
         return new{S1, S2, L}(name, static_payoff_matrix, interaction_fn_name)
     end
-    # function Game(name::String, payoff_matrix::Matrix{Int}) #for a zero-sum payoff matrix ########################## MUST FIX THIS!!!!!!!! #####################
-    #     matrix_size = size(payoff_matrix)
-    #     S1 = matrix_size[1]
-    #     S2 = matrix_size[2]
-    #     L = S1 * S2
-    #     indices = CartesianIndices(payoff_matrix)
-    #     tuple_vector = Vector{Tuple{Int, Int}}([])
-    #     for index in indices
-    #         new_tuple = Tuple{Int, Int}([payoff_matrix[index], -payoff_matrix[index]])
-    #         push!(tuple_vector, new_tuple)
-    #     end
-    #     new_payoff_matrix = reshape(tuple_vector, matrix_size)
-    #     return new{S1, S2, L}(name, PayoffMatrix{S1, S2, L}(new_payoff_matrix))
-    # end
 end
 
 
@@ -67,7 +52,7 @@ name(game::Game) = getfield(game, :name)
 
 Get the payoff matrix for a game.
 """
-payoff_matrix(game::Game) = getfield(game, :payoff_matrix) #NOTE: type instability due to generic payoff matrix size
+payoff_matrix(game::Game) = getfield(game, :payoff_matrix)
 
 
 import Base.size #must import to extend

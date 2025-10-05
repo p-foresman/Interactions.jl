@@ -19,9 +19,9 @@ mutable struct Agent <: AbstractAgent
     rational_choice::Choice
     choice::Choice
 
-    function Agent(id::Int, is_hermit::Bool, memory::Vector{<:Integer}, rational_choice::Integer, choice::Integer) #NOTE: do i need this method? (currently required for structtypes)
-        return new(id, is_hermit, memory, rational_choice, choice)
-    end
+    # function Agent(id::Int, is_hermit::Bool, memory::Vector{<:Integer}, rational_choice::Integer, choice::Integer) #NOTE: do i need this method? (currently required for structtypes)
+    #     return new(id, is_hermit, memory, rational_choice, choice)
+    # end
     function Agent(;id::Int=0, is_hermit::Bool=false, memory::Vector{<:Integer}=PerceptSequence([]), rational_choice::Integer=Choice(0), choice::Integer=Choice(0))
         return new(id, is_hermit, memory, rational_choice, choice)
     end
@@ -59,13 +59,6 @@ ishermit!(agent::Agent, is_hermit::Bool) = setfield!(agent, :is_hermit, is_hermi
 Get the current memory of an agent.
 """
 memory(agent::Agent) = getfield(agent, :memory)
-
-# """
-#     memory_length(agent::Agent)
-
-# Get the memory length of an agent.
-# """
-# memory_length(agent::Agent) = length(memory(agent))
 
 """
     rational_choice(agent::Agent)

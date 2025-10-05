@@ -5,40 +5,14 @@ const default_toml_path() = joinpath(@__DIR__, "default_config.toml")
 const user_toml_path() = joinpath(project_dirpath(), "Interactions.toml")
 
 
-# abstract type Database end
-
-# struct Database.PostgresInfo <: Database
-#     name::String
-#     user::String
-#     host::String
-#     port::String
-#     password::String
-# end
-
-# struct Database.SQLiteInfo <: Database
-#     name::String
-#     filepath::String
-# end
-
-# db_type(database::Database.SQLiteInfo) = "sqlite"
-# db_type(database::Database.PostgresInfo) = "postgres"
-
-
-
 struct Settings
-    # data::Dict{String, Any} #Base.ImmutableDict #contains the whole parsed .toml config (dont really need)
     use_seed::Bool
     random_seed::Int
-    # use_distributed::Bool
     procs::Int
     timeout::Union{Int, Nothing}
     timeout_exit_code::Int
     capture_interval::Union{Int, Nothing}
     database::Union{Database.DatabaseSettings, Nothing} #if nothing, not using database
-    # database::Union{Database.DBInfo, Nothing} #if nothing, not using database
-    # push_period::Union{Int, Nothing}
-    # query::Vector{<:Database.DBInfo} #will be empty if no databse selected
-    # checkpoint::Bool
     figure_dirpath::String
     # data_script::Union{Nothing, String}
 end
@@ -79,11 +53,6 @@ function Settings(settings::Dict{String, Any})
     random_seed = settings["random_seed"]
     @assert random_seed isa Int && random_seed >= 0 "'random_seed' value must be an Int (>= 0)"
 
-
-    # @assert haskey(settings, "use_distributed") "config file must have a 'use_distributed' variable"
-    # use_distributed = settings["use_distributed"]
-    # @assert use_distributed isa Bool "'use_distributed' value must be a Bool"
-
     @assert haskey(settings, "processes") "config file must have a 'processes' variable"
     procs = settings["processes"]
     @assert procs isa Int && procs >= 1 "'processes' value must be a positive Int (>=1)"
@@ -114,27 +83,10 @@ function Settings(settings::Dict{String, Any})
     @assert haskey(databases, "selected") "config file must have a 'selected' database path in the [databases] table using dot notation of the form \"db_type.db_name\" OR an empty string if not using a database"
     selected_db = databases["selected"]
     @assert selected_db isa String "the denoted default database must be a String (can be an empty string if not using a database)"
-    
-    #NOTE: should these be under 'databases'? (exit_code probably shouldn't!)
-    # @assert haskey(databases, "checkpoint") "config file must have a 'checkpoint' boolean variable. This field's value only matters if a database is selected"
-    # checkpoint = databases["checkpoint"]
-    # @assert checkpoint isa Bool "'checkpoint' value must be a Bool"
 
     @assert haskey(databases, "full_store") "config file must have a 'full_store' boolean variable. This field's value only matters if a database is selected"
     full_store = databases["full_store"]
     @assert full_store isa Bool "'full_store' value must be a Bool"
-
-    # @assert haskey(databases, "checkpoint_database") "config file must have a 'checkpoint_database' database path in the [databases] table using dot notation of the form \"db_type.db_name\" OR an empty string to use main selected database"
-
-    # @assert haskey(databases, "data_script") "config file must have a 'data_script' variable in the [databases] table specifying the path to a data loading script to be loaded on database initialization OR an empty string if no data loading is required"
-    # data_script = databases["data_script"]
-    # @assert data_script isa String "the 'data_script' variable must be a String (can be an empty string if data loading isn't required)"
-    # if !isempty(data_script)
-    #     data_script = normpath(joinpath(project_dirpath, data_script))
-    #     @assert isfile(data_script)
-    # else
-    #     data_script = nothing
-    # end
 
     #NOTE: change error message
     @assert haskey(databases, "attached") "config file must have an 'attached' variable containing an array of databases to attach to the selected database while performing queries in the [databases] table using dot notation of the form \"db_type.db_name\". If array is empty, the 'selected' database will be queried"
@@ -144,25 +96,14 @@ function Settings(settings::Dict{String, Any})
 
     #if selected_db exists, must validate selected database. Otherwise, not using database
     database = nothing #selected database
-    # checkpoint = nothing #checkpoint database
     if !isempty(selected_db)
         selected = validate_database(databases, "selected", selected_db)
         attached = Vector{typeof(selected)}() #will ensure that all dbs in query are the same type
         for attached_db in attached_dbs
-            # if attach_db != selected_db
             push!(attached, validate_database(databases, "attached", attached_db))
-            # end
         end
 
         database = Database.DatabaseSettings{typeof(selected)}(selected, attached, full_store)
-        # if databases["checkpoint"]
-        #     checkpoint_db = databases["checkpoint_database"]
-        #     if isempty(checkpoint_db)
-        #         checkpoint = Checkpoint(database)
-        #     else
-        #        checkpoint = Checkpoint(validate_database(databases, "checkpoint_database", checkpoint_db))
-        #     end
-        # end
     end
 
     return Settings(use_seed, random_seed, procs, timeout, timeout_exit_code, iszero(capture_interval) ? nothing : capture_interval, database, figure_dirpath) # settings, 
@@ -170,7 +111,6 @@ end
 
 function Settings(toml_path::String)
     @assert last(split(toml_path, ".")) == "toml" "config file be .toml"
-    # settings = TOML.parsefile(toml_path)
     return Settings(TOML.parsefile(toml_path))
 end
 
@@ -219,9 +159,6 @@ end
 Load the Interactions.toml config file to be used in the Interactions package
 """
 function configure(toml_path::String="")
-    # println(project_dirpath())
-    # println(default_toml_path())
-    # println(user_toml_path())
     if isempty(toml_path) #if no .toml filepath is provided, try to get the Interactions.toml in the project directory. If this doesn't exist, use the default_config.toml, which will be generated within the project directory as Interactions.toml
         if isfile(user_toml_path())
             #load the user's settings config
@@ -248,52 +185,33 @@ function configure(toml_path::String="")
         if USE_DB()
             #initialize the database
             print("initializing databse [$(DB_TYPE()).$(MAIN_DB().name)]... ")
-            # out = stdout
-            # redirect_stdout(devnull)
-            Database.init(MAIN_DB()) #;data_script=SETTINGS.data_script) #suppress the stdout stream
-            #NOTE: add a "state" database table which stores db info like 'initialized' (if initialized is true, dont need to rerun initialization)
+            Database.init(MAIN_DB())
+
             if MAIN_DB() isa Database.SQLiteInfo
                 println("SQLite database file initialized at $(MAIN_DB().filepath)")
             else
                 println("PostgreSQL database initialized")
             end
 
-            #NOTE: really should make sure that exist with the right setup, not initialize new ones
             for attached_db in ATTACHED_DBS()
                 print("verifying attached databse [$(Database.type(attached_db)).$(attached_db.name)]... ")
-                # out = stdout
-                # redirect_stdout(devnull)
-                Database.init(attached_db) #;data_script=SETTINGS.data_script) #suppress the stdout stream
-                #NOTE: add a "state" database table which stores db info like 'initialized' (if initialized is true, dont need to rerun initialization)
+                Database.init(attached_db)
+
                 if MAIN_DB() isa Database.SQLiteInfo #NOTE: is this necessary?
                     println("SQLite database file verified at $(attached_db)")
                 else
                     println("PostgreSQL database verified")
                 end
             end
-
-            # if !isnothing(SETTINGS.checkpoint) && SETTINGS.checkpoint.database != SETTINGS.database
-            #     print("initializing checkpoint databse [$(db_type(SETTINGS.checkpoint.database)).$(SETTINGS.checkpoint.database.name)]... ")
-
-            #     init(SETTINGS.checkpoint.database)
-
-            #     if SETTINGS.checkpoint.database isa Database.SQLiteInfo
-            #         println("SQLite database file initialized at $(SETTINGS.checkpoint.database.filepath)")
-            #     else
-            #         println("PostgreSQL database initialized")
-            #     end
-            # end
         end
 
         resetprocs() #resets the process count to 1 for proper reconfigure
-        if SETTINGS.procs > 1 #|| SETTINGS.timeout > 0 #if the timeout is active, need to add a process for the timer to run on
+        if SETTINGS.procs > 1
             #initialize distributed processes with Interactions available in their individual scopes
             print("initializing $(SETTINGS.procs) distributed processes... ")
             procs = addprocs(SETTINGS.procs, exeflags=`--project=$(Base.active_project())`)
             @everywhere procs begin
                 eval(quote
-                    # include(joinpath(dirname(@__DIR__), "Interactions.jl")) # this method errors on other local projects since the project environment doesn't contain all of the dependencies (Graphs, Plots, etc)
-                    # using .Interactions
                     import Pkg
                     Pkg.activate($$(project_dirpath()); io=devnull) #must activate the local project environment to gain access to the Interactions package
                     using Interactions #will call __init__() on startup for these processes which will configure all processes internally

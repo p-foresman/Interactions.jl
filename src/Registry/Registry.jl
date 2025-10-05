@@ -145,12 +145,5 @@ macro stoppingcondition(fn_expr)
     update_everywhere(:StoppingConditions, :_stopping_condition_fn_register)
     return nothing
 end
-    
-
-# function _assert_registries() #not sure what this was
-#     @assert !isempty(_starting_condition_registry) "Must define at least one starting condition function with the @startingcondition macro"
-#     @assert !isempty(_stopping_condition_registry) "Must define at least one stopping condition function with the @stoppingcondition macro"
-#     return nothing
-# end
 
 end

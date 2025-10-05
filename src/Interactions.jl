@@ -50,11 +50,6 @@ export
     period
 
 
-#include StructTypes for reconstructing custom structures
-# include("settings/structtypes.jl")
-
-# global SETTINGS
-
 #api to sqlite and postgresql functionality
 include("Database/Database.jl")
 export Database

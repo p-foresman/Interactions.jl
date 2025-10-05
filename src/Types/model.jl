@@ -13,7 +13,7 @@ S2 = column dimension of Game instance
 V = number of agents/vertices
 E = number of relationships/edges
 """
-struct Model{S1, S2, L, A<:AbstractAgent} #, GM <: GraphModel}
+struct Model{S1, S2, L, A<:AbstractAgent}
     # id::Union{Nothing, Int}
     agent_type::Type{A}
     population_size::Int #NOTE: population_size could be a requiured parameter in 'parameters' with a default value. Could in theory be updated?
@@ -27,11 +27,6 @@ struct Model{S1, S2, L, A<:AbstractAgent} #, GM <: GraphModel}
     variables::Variables #the variables used in the model (these variables can be altered during the course of a simulation)
     arrays::Arrays
 
-    # function Model(population::Tuple{Type{A}, Int}, game::Game{S1, S2, L}, graphmodel::GraphModel, starting_condition_fn_var::String, stopping_condition_fn_var::String; parameters::Parameters=Parameters(), variables::Variables=Variables()) where {A<:AbstractAgent, S1, S2}
-    #     @assert isdefined(Registry.StartingConditions, Symbol(starting_condition_fn_var)) "'starting_condition_fn_var' provided does not correlate to a defined function in the Registry. Must use @startingcondition macro before function to register it"
-    #     @assert isdefined(Registry.StoppingConditions, Symbol(stopping_condition_fn_var)) "'stopping_condition_fn_var' provided does not correlate to a defined function in the Registry. Must use @stoppingcondition macro before function to register it"
-    #     return new{S1, S2, A}(population, game, graphmodel, starting_condition_fn_var, stopping_condition_fn_var, parameters, variables)
-    # end
     function Model(agent_type::Type{A}, population_size::Integer, game::Game{S1, S2, L}, graphmodel_fn_var::Symbol, starting_condition_fn_var::Symbol, stopping_condition_fn_var::Symbol; parameters::Parameters=Parameters(), variables::Variables=Variables(), arrays::Arrays=Arrays()) where {A<:AbstractAgent, S1, S2, L}
         isdefined(Registry.GraphModels, graphmodel_fn_var) || throw(Registry.NotDefinedError(graphmodel_fn_var, Symbol("@graphmodel")))
         isdefined(Registry.StartingConditions, starting_condition_fn_var) || throw(Registry.NotDefinedError(starting_condition_fn_var, Symbol("@startingcondition")))
@@ -40,7 +35,6 @@ struct Model{S1, S2, L, A<:AbstractAgent} #, GM <: GraphModel}
         return new{S1, S2, L, A}(agent_type, population_size, game, graphmodel_fn_var, starting_condition_fn_var, stopping_condition_fn_var, parameters, variables, arrays)
     end
 end
-
 
 
 ##########################################
@@ -54,9 +48,6 @@ Get the agent type (<:AbstractAgent) used in the model.
 """
 agent_type(model::Model) = getfield(model, :agent_type)
 
-
-
-#Game
 """
     game(model::Model)
 
@@ -106,15 +97,6 @@ interaction_fn_name(model::Model) = interaction_fn_name(game(model))
 Get the user-defined interaction function which correlates to the String stored in the 'interaction_fn_name' Game field.
 """
 interaction_fn(model::Model) = interaction_fn(game(model))
-
-
-# GraphModel
-# """
-#     graphmodel(model::Model)
-
-# Get the GraphModel instance in the model.
-# """
-# graphmodel(model::Model) = getfield(model, :graphmodel)
 
 """
     population_size(model::Model)
