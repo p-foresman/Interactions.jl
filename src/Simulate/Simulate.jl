@@ -14,8 +14,8 @@ import
 using
     Random,
     Distributed,
-    DataStructures,
-    TimerOutputs
+    DataStructures
+    # TimerOutputs
 
 include("engine.jl")
 include("producers.jl")

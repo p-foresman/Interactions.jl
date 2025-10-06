@@ -14,11 +14,11 @@ import
     ..Registry,
     ..Interactions
 
-# using ..Interactions
+using DataStructures
 
 abstract type Generator end #supertype to all generators
 
-include("graphmodel_generators.jl")
+# include("graphmodel_generators.jl")
 include("model_generators.jl")
 
 Base.size(generator::Generator) = getfield(generator, :size) #NOTE: could have one size function for all generators

@@ -56,7 +56,13 @@ export Database
 
 #include Generators
 include("Generators/Generators.jl")
-#using .Generators
+using .Generators
+export 
+    ModelGenerator,
+    ModelGeneratorSet,
+    generate_model,
+    generate_database,
+    get_model_id #could remove
 
 #include default config and configure
 include("settings/config.jl")

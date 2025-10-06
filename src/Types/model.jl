@@ -2,6 +2,7 @@ const Parameters = Dict{Symbol, Float64} #NOTE: could make these <:Real, since s
 const Variables = Dict{Symbol, Float64}
 const Arrays = Dict{Symbol, Vector{Vector{Float64}}} #rename to PreAllocatedArrays?
 
+
 """
     Model{S1, S2, V, E}
 

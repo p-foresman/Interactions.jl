@@ -39,3 +39,17 @@ Interactions.Generators.generate_model(modelgenerator, 1)
 
 # qp_simulations_1 = Database.Query_simulations(qp_games, qp_parameters_1, qp_graphmodels; sims_kwargs...)
 
+mg = ModelGenerator(Interactions.Types.Agent,
+                                            [10, 20, 30],
+                                            game,
+                                            :erdos_renyi,
+                                            :fractious_starting_condition,
+                                            :partially_reinforced_equity_stopping_condition,
+                                            Dict(:memory_length=>[10, 20], :error_rate=>[0.1, 0.09], :λ=>[5, 10]);
+                                            variables=Variables(:period_count=>0),
+                                            arrays=Arrays(:opponent_strategy_recollection=>zeros.(Float32, [3, 3]),
+                                                        :opponent_strategy_probabilities=>zeros.(Float32, [3, 3]),
+                                                        :expected_utilities=>zeros.(Float32, [3, 3]))
+                                            )
+
+generate_model(mg, 15)

@@ -82,3 +82,18 @@ function run_period!(state::Types.State)
     Types.increment_period!(state)
     return nothing
 end
+
+
+
+
+# Helper functions
+
+function count_strategy(memory_set::Interactions.Types.PerceptSequence, desired_strat::Integer)
+    count::Int = 0
+    for memory in memory_set
+        if memory == desired_strat
+            count += 1
+        end
+    end
+    return count
+end

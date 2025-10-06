@@ -1,39 +1,34 @@
 """
     ModelGenerator
 
-A type to store the values for a parameter sweep. Can be used to populate a database with model data and to generate a model given a model id.
+A type to store the values for a parameter sweep. Can be used to populate a database with model data and to generate a model given an index.
 """
 struct ModelGenerator <: Generator
-    game::Types.Game
-    agent_types::Vector{Type{<:Types.AbstractAgent}}
+    agent_type::Type{<:Types.AbstractAgent}
     population_sizes::Vector{Int}
+    game::Types.Game
     graphmodel::Symbol # can only generate with one graph model per model generator for now due to the implementation of parameters
-    starting_condition::Vector{Tuple{String, Types.Parameters}} # ("starting_condition_name", Parameters(var1=>'val1', var2=>'val2'))
-    stopping_condition::Vector{Tuple{String, Types.Parameters}} # ("stopping_condition_name", Parameters(var1=>'val1', var2=>'val2'))
+    starting_condition::Symbol
+    stopping_condition::Symbol
     parameters::Dict{Symbol, Vector{Float64}} # this is what we're sweeping over
+    variables::Types.Variables #the variables used in the model (these variables can be altered during the course of a simulation)
+    arrays::Types.Arrays
     size::Int
-end
 
-function ModelGenerator(game::Types.Game,
-    population_sizes::Union{Integer, Vector{<:Integer}},
-    memory_lengths::Union{Integer, Vector{<:Integer}},
-    error_rates::Union{Real, Vector{<:Real}},
-    starting_conditions::Union{Tuple{String, Types.Parameters}, Vector{Tuple{String, Types.Parameters}}},
-    stopping_conditions::Union{Tuple{String, Types.Parameters}, Vector{Tuple{String, Types.Parameters}}},
-    graphmodels::Union{GraphModelGenerator, Vector{GraphModelGenerator}}
-)   
-    population_sizes = [population_sizes...]
-    memory_lengths = [memory_lengths...]
-    error_rates = [error_rates...]
-    if starting_conditions isa Tuple{String, Types.Parameters} starting_conditions = Vector{Tuple{String, Types.Parameters}}([starting_conditions]) end
-    if stopping_conditions isa Tuple{String, Types.Parameters} stopping_conditions = Vector{Tuple{String, Types.Parameters}}([stopping_conditions]) end
-    graphmodels = if graphmodels isa GraphModelGenerator graphmodels = Vector{GraphModelGenerator}([graphmodels]) end
-
-    # println(graphmodels)
-
-    sz = sum(Interactions.volume(population_sizes, memory_lengths, error_rates, starting_conditions, stopping_conditions) .* size.(graphmodels))
-
-    return ModelGenerator(game, population_sizes, memory_lengths, error_rates, starting_conditions, stopping_conditions, graphmodels, sz)
+    function ModelGenerator(
+        agent_type::Type{<:Types.AbstractAgent},
+        population_sizes::Vector{Int},
+        game::Types.Game,
+        graphmodel::Symbol,
+        starting_condition::Symbol,
+        stopping_condition::Symbol,
+        parameters::Dict{Symbol, Vector};
+        variables::Types.Variables=Types.Variables(),
+        arrays::Types.Arrays=Types.Arrays()
+    )   
+        sz = sum(Interactions.volume(population_sizes, values(parameters)...))
+        return new(agent_type, population_sizes, game, graphmodel, starting_condition, stopping_condition, parameters, variables, arrays, sz)
+    end
 end
 
 # Base.size(generator::ModelGenerator) = getfield(generator, :size) #NOTE: could have one size function for all generators
@@ -41,22 +36,28 @@ end
 
 function generate_model(generator::ModelGenerator, index::Integer) #NOTE: could use iterator method here too, but would be much less efficient
     count = 0
-    for population in generator.population_sizes
-        for memory_length in generator.memory_lengths
-            for error_rate in generator.error_rates
-                for starting_condition in generator.starting_conditions
-                    for stopping_condition in generator.stopping_conditions
-                        params = Types.Parameters(population, memory_length, error_rate, starting_condition[1], stopping_condition[1], user_variables=merge(starting_condition[2], stopping_condition[2]))
-                        for graphmodel_generator in generator.graphmodels
-                            for graphmodel in graphmodel_generator
-                                count += 1
-                                if count == index
-                                    return Types.Model(generator.game, params, graphmodel)
-                                end
-                            end
-                        end
-                    end
-                end
+
+    # ensure that params and vals are in the same order for Iterators.product
+    params = sort!(collect(keys(generator.parameters)))
+    vals = []
+    for param in params
+        push!(vals, generator.parameters[param])
+    end
+
+    for population_size in generator.population_sizes
+        for parameter_combination in Iterators.product(vals...)
+            count += 1
+            if count == index
+                return Types.Model(generator.agent_type,
+                                    population_size, 
+                                    generator.game, 
+                                    generator.graphmodel, 
+                                    generator.starting_condition, 
+                                    generator.stopping_condition;
+                                    parameters = Types.Parameters(zip(params, parameter_combination)),
+                                    variables = generator.variables,
+                                    arrays = generator.arrays
+                                    )
             end
         end
     end
@@ -64,21 +65,27 @@ function generate_model(generator::ModelGenerator, index::Integer) #NOTE: could 
 end
 
 function generate_database(generator::ModelGenerator)
-    for population in generator.population_sizes
-        for memory_length in generator.memory_lengths
-            for error_rate in generator.error_rates
-                for starting_condition in generator.starting_conditions
-                    for stopping_condition in generator.stopping_conditions
-                        params = Types.Parameters(population, memory_length, error_rate, starting_condition[1], stopping_condition[1], user_variables=merge(starting_condition[2], stopping_condition[2]))
-                        for graphmodel_generator in generator.graphmodels
-                            for graphmodel in graphmodel_generator
-                                model = Types.Model(generator.game, params, graphmodel)
-                                Database.db_insert_model(model)
-                            end
-                        end
-                    end
-                end
-            end
+   
+    # ensure that params and vals are in the same order for Iterators.product
+    params = sort!(collect(keys(generator.parameters)))
+    vals = []
+    for param in params
+        push!(vals, generator.parameters[param])
+    end
+
+    for population_size in generator.population_sizes
+        for parameter_combination in Iterators.product(vals...)
+            model = Types.Model(generator.agent_type,
+                                population_size, 
+                                generator.game, 
+                                generator.graphmodel, 
+                                generator.starting_condition, 
+                                generator.stopping_condition;
+                                parameters = Types.Parameters(zip(params, parameter_combination)),
+                                variables = generator.variables,
+                                arrays = generator.arrays
+                                )
+            Database.insert_model(model)
         end
     end
     return nothing
